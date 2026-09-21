@@ -5512,6 +5512,15 @@ show(tabs[0].dataset.split);
 
 <script id="rnb-chrome-js">
 (function(){
+  /* Inside the AI doc's Tools overlay this page is an iframe and that overlay
+     already supplies the tabs, Screen and Zoom. Two bars would stack. */
+  if (window.self !== window.top) {
+    var _b = document.getElementById('rnb-bar');
+    if (_b) _b.parentNode.removeChild(_b);
+    var _h = document.querySelector('body > header');
+    if (_h) _h.style.top = '0px';
+    return;
+  }
   var KEY='trainers';
   var FILTERS=[{n:'Normal',v:''},{n:'Dim',v:'brightness(.82) contrast(1.04)'}];
   var ZOOMS=[75,90,100,110,125,150], ZOOM_DEFAULT=2;
