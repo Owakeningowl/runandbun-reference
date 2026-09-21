@@ -1,0 +1,13 @@
+# working material, not part of the published site
+.bak-pretheme/
+index.html.bak
+aidoc.*
+rbcalc.html
+rbdex.html
+astral-dex.css
+sheet1.xlsx
+sheet2.xlsx
+rnb_spec.txt
+rnb_trainers.json
+build_rnb_doc.py
+.DS_Store

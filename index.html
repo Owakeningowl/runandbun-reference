@@ -1,0 +1,2008 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="astral">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Run and Bun &mdash; AI Reference</title>
+<meta name="description" content="Complete code-verified reference for the Run and Bun battle AI: scoring functions, move-by-move logic, switch AI and doubles rules."/>
+<style>
+/* ============ TOKENS ============ */
+:root{
+  --sans: ui-sans-serif, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", "JetBrains Mono", "IBM Plex Mono", Menlo, Consolas, monospace;
+  --r-sm:6px; --r-md:10px; --r-lg:16px;
+  --sidebar:300px;
+  --ease: cubic-bezier(.4,0,.2,1);
+}
+html[data-theme="astral"]{
+  --bg:#15181f; --bg-2:#171b23; --panel:#1c2028; --panel-2:#20242e;
+  --ink:#d1d5de; --ink-2:#a6aeba; --ink-3:#727b89;
+  --border:#272c38; --border-2:#333a48;
+  --accent:#72acef; --accent-2:#91bdf0; --accent-soft:rgba(114,172,239,.06);
+  --pos-bg:rgba(46,196,120,.13); --pos-fg:#5cc98f; --pos-bd:rgba(46,196,120,.3);
+  --neg-bg:rgba(248,81,73,.13); --neg-fg:#f0908a; --neg-bd:rgba(248,81,73,.3);
+  --zero-bg:rgba(139,155,175,.13); --zero-fg:#98a1af; --zero-bd:rgba(139,155,175,.28);
+  --code-bg:#1e232c; --code-fg:#c3cad6;
+  --shadow: 0 1px 2px rgba(0,0,0,.35), 0 8px 24px -8px rgba(0,0,0,.45);
+  --glow: radial-gradient(1200px 400px at 15% -10%, rgba(114,172,239,.04), transparent 70%);
+}
+html[data-theme="parchment"]{
+  --bg:#f6f1e6; --bg-2:#efe8d9; --panel:#fffdf7; --panel-2:#f3ecdd;
+  --ink:#2f2a22; --ink-2:#5c5346; --ink-3:#8b8071;
+  --border:#e2d9c6; --border-2:#cec3ab;
+  --accent:#1f5fa8; --accent-2:#3e7cc2; --accent-soft:rgba(31,95,168,.045);
+  --pos-bg:#e6f2e4; --pos-fg:#2f6b35; --pos-bd:#c3ddbe;
+  --neg-bg:#f8e7e1; --neg-fg:#9c3720; --neg-bd:#e8c6b9;
+  --zero-bg:#eee8db; --zero-fg:#5a5245; --zero-bd:#dbd2bf;
+  --code-bg:#efe7d6; --code-fg:#443c30;
+  --shadow: 0 1px 2px rgba(70,55,30,.06), 0 8px 24px -10px rgba(70,55,30,.14);
+  --glow: radial-gradient(1200px 400px at 15% -10%, rgba(31,95,168,.03), transparent 70%);
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0; background:var(--bg); background-image:var(--glow); background-attachment:fixed;
+  color:var(--ink); font-family:var(--sans); font-size:15.5px; line-height:1.7;
+  -webkit-font-smoothing:antialiased; transition:background-color .25s var(--ease), color .25s var(--ease);
+}
+::selection{background:var(--accent-soft); color:var(--ink);}
+
+/* ============ READ PROGRESS ============ */
+#progress{position:fixed;top:0;left:0;height:2px;width:0;z-index:60;
+  background:linear-gradient(90deg,var(--accent),var(--accent-2));transition:width .1s linear;}
+
+/* ============ LAYOUT ============ */
+#layout{display:flex;max-width:1560px;margin:0 auto;min-height:100vh;}
+
+/* ============ SIDEBAR ============ */
+#sidebar{
+  width:var(--sidebar);flex-shrink:0;position:sticky;top:0;height:100vh;
+  display:flex;flex-direction:column;background:var(--panel);
+  border-right:1px solid var(--border);z-index:40;
+}
+.side-head{padding:22px 20px 14px;border-bottom:1px solid var(--border);}
+.brand{display:flex;align-items:center;gap:10px;margin-bottom:4px;}
+.brand-dot{width:9px;height:9px;border-radius:50%;background:var(--accent);
+  box-shadow:0 0 0 4px var(--accent-soft);flex-shrink:0;}
+.brand-name{font-family:var(--mono);font-size:14px;font-weight:700;letter-spacing:-.2px;}
+.brand-sub{font-size:11px;color:var(--ink-3);letter-spacing:.3px;padding-left:19px;}
+.search-wrap{position:relative;margin-top:14px;}
+#search{
+  width:100%;padding:9px 30px 9px 32px;font-family:var(--sans);font-size:13px;
+  background:var(--bg-2);color:var(--ink);border:1px solid var(--border);
+  border-radius:var(--r-md);outline:none;transition:border-color .15s,box-shadow .15s;
+}
+#search:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+#search::placeholder{color:var(--ink-3);}
+.search-ico{position:absolute;left:10px;top:50%;transform:translateY(-50%);
+  width:14px;height:14px;color:var(--ink-3);pointer-events:none;}
+.search-kbd{position:absolute;right:9px;top:50%;transform:translateY(-50%);
+  font-family:var(--mono);font-size:10px;color:var(--ink-3);border:1px solid var(--border-2);
+  border-radius:4px;padding:1px 5px;pointer-events:none;}
+#search:focus ~ .search-kbd{opacity:0;}
+#toc{flex:1;overflow-y:auto;padding:12px 12px 40px;scrollbar-width:thin;}
+#toc::-webkit-scrollbar{width:8px;}
+#toc::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:4px;}
+#toc a{
+  display:block;padding:5px 10px;margin:1px 0;color:var(--ink-2);text-decoration:none;
+  font-size:12.5px;line-height:1.4;border-radius:var(--r-sm);position:relative;
+  transition:background .12s,color .12s;
+}
+#toc a.major{
+  font-family:var(--mono);font-weight:700;font-size:11.5px;letter-spacing:.4px;
+  text-transform:uppercase;color:var(--ink);margin-top:14px;
+}
+#toc a.minor{padding-left:22px;font-size:12.5px;}
+#toc a:hover{background:var(--panel-2);color:var(--ink);}
+#toc a.active{background:var(--accent-soft);color:var(--accent);font-weight:600;}
+#toc a.active::before{content:"";position:absolute;left:2px;top:50%;transform:translateY(-50%);
+  width:3px;height:60%;background:var(--accent);border-radius:2px;}
+#toc a mark{background:var(--accent-soft);color:var(--accent);border-radius:3px;padding:0 1px;}
+.no-results{padding:24px 12px;text-align:center;color:var(--ink-3);font-size:12.5px;display:none;}
+.side-foot{padding:10px 16px;border-top:1px solid var(--border);display:flex;
+  align-items:center;justify-content:space-between;gap:8px;}
+.count{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);}
+
+/* ============ BUTTONS ============ */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  background:var(--panel-2);color:var(--ink-2);border:1px solid var(--border);
+  border-radius:var(--r-sm);padding:6px 9px;cursor:pointer;font-family:var(--sans);
+  font-size:12px;transition:all .15s var(--ease);
+}
+.btn:hover{color:var(--accent);border-color:var(--accent);background:var(--accent-soft);}
+.btn svg{width:14px;height:14px;}
+/* the visible icon shows the CURRENT theme; clicking advances to the next.
+   These need the #theme-btn prefix to outrank the blanket hide below. */
+#theme-btn svg{display:none;}
+html[data-theme="astral"]    #theme-btn .ico-star{display:block;}
+html[data-theme="parchment"] #theme-btn .ico-sun{display:block;}
+
+
+
+/* ============ CONTENT ============ */
+#main{flex:1;min-width:0;display:flex;flex-direction:column;}
+#topbar{
+  position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:12px;
+  padding:12px 32px;border-bottom:1px solid var(--border);
+  background:color-mix(in srgb, var(--bg) 92%, transparent);
+  backdrop-filter:saturate(160%) blur(12px);-webkit-backdrop-filter:saturate(160%) blur(12px);
+}
+#menu-btn{display:none;}
+.crumb{font-family:var(--mono);font-size:12px;color:var(--ink-3);flex:1;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.crumb b{color:var(--ink-2);font-weight:600;}
+#content{padding:0 32px 140px;max-width:900px;width:100%;}
+
+/* hero */
+.hero{padding:56px 0 34px;border-bottom:1px solid var(--border);margin-bottom:8px;}
+.eyebrow{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:10.5px;
+  letter-spacing:1.4px;text-transform:uppercase;color:var(--accent);background:var(--accent-soft);
+  border:1px solid var(--accent-soft);padding:4px 10px;border-radius:100px;margin-bottom:18px;}
+.hero h1{
+  font-family:var(--mono);font-size:clamp(26px,3.6vw,38px);line-height:1.15;margin:0 0 14px;
+  font-weight:700;letter-spacing:-1px;
+  background:linear-gradient(135deg,var(--ink) 30%,var(--accent));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.hero p{color:var(--ink-2);font-size:15px;margin:0;max-width:62ch;}
+.stats{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px;}
+.stat{background:var(--panel);border:1px solid var(--border);border-radius:var(--r-md);
+  padding:10px 16px;box-shadow:var(--shadow);}
+.stat b{display:block;font-family:var(--mono);font-size:18px;color:var(--accent);line-height:1.2;}
+.stat span{font-size:11px;color:var(--ink-3);letter-spacing:.4px;text-transform:uppercase;}
+
+/* headings */
+#content h2{
+  font-family:var(--mono);font-size:17px;font-weight:700;letter-spacing:-.2px;
+  margin:52px 0 18px;padding:13px 18px;border-radius:var(--r-md);
+  background:linear-gradient(90deg,var(--accent-soft),transparent 85%);
+  border:1px solid var(--border);border-left:3px solid var(--accent);
+  scroll-margin-top:70px;position:relative;
+}
+#content h3{
+  font-family:var(--mono);font-size:14.5px;font-weight:700;color:var(--accent);
+  margin:32px 0 10px;padding-bottom:7px;border-bottom:1px dashed var(--border-2);
+  scroll-margin-top:70px;position:relative;
+}
+.anchor{
+  position:absolute;left:-26px;top:50%;transform:translateY(-50%);
+  opacity:0;background:none;border:none;cursor:pointer;color:var(--ink-3);
+  padding:4px;line-height:0;border-radius:var(--r-sm);transition:opacity .15s,color .15s;
+}
+#content h3 .anchor{top:calc(50% - 4px);}
+h2:hover .anchor, h3:hover .anchor, .anchor:focus{opacity:1;}
+.anchor:hover{color:var(--accent);background:var(--accent-soft);}
+.anchor svg{width:15px;height:15px;}
+
+/* prose */
+#content p{margin:12px 0;color:var(--ink);}
+#content ul,#content ol{margin:10px 0;padding-left:24px;}
+#content li{margin:6px 0;}
+#content li::marker{color:var(--accent);}
+#content li ul{margin-top:6px;}
+#content li ul li::marker{color:var(--ink-3);}
+#content strong{font-weight:650;color:var(--ink);}
+#content code{
+  font-family:var(--mono);font-size:12.8px;background:var(--code-bg);color:var(--code-fg);
+  padding:2px 6px;border-radius:5px;border:1px solid var(--border);white-space:pre-wrap;
+}
+#content hr{border:none;border-top:1px solid var(--border);margin:36px 0;}
+
+/* score chips */
+.sc-pos,.sc-neg,.sc-zero{
+  display:inline-block;font-family:var(--mono);font-weight:700;font-size:12.5px;
+  padding:1px 8px;border-radius:100px;border:1px solid;font-variant-numeric:tabular-nums;
+  white-space:nowrap;vertical-align:baseline;
+}
+.sc-pos{background:var(--pos-bg);color:var(--pos-fg);border-color:var(--pos-bd);}
+.sc-neg{background:var(--neg-bg);color:var(--neg-fg);border-color:var(--neg-bd);}
+.sc-zero{background:var(--zero-bg);color:var(--zero-fg);border-color:var(--zero-bd);}
+
+/* toast */
+#toast{
+  position:fixed;bottom:26px;left:50%;transform:translate(-50%,16px);opacity:0;pointer-events:none;
+  background:var(--panel);color:var(--ink);border:1px solid var(--border);box-shadow:var(--shadow);
+  padding:9px 16px;border-radius:100px;font-size:13px;z-index:70;transition:all .22s var(--ease);
+}
+#toast.show{opacity:1;transform:translate(-50%,0);}
+
+/* back to top */
+#totop{position:fixed;right:24px;bottom:24px;z-index:50;width:38px;height:38px;padding:0;
+  border-radius:50%;box-shadow:var(--shadow);background:var(--panel);opacity:0;
+  pointer-events:none;transition:opacity .2s,transform .2s;}
+#totop.show{opacity:1;pointer-events:auto;}
+#totop:hover{transform:translateY(-2px);}
+
+/* ============ READABILITY PASS ============ */
+
+/* Each move becomes a card so entries stop bleeding into each other */
+.entry{
+  border:1px solid var(--border);
+  border-radius:var(--r-md);
+  background:var(--panel);
+  padding:14px 18px 6px;
+  margin:0 0 10px;
+  transition:border-color .15s var(--ease), background .15s var(--ease);
+}
+.entry:hover{ border-color:var(--border-2); }
+.entry > h3{
+  margin:0 0 8px !important;
+  font-size:15px;
+  letter-spacing:-.1px;
+}
+.entry > ul{ margin:0 0 8px; padding-left:18px; }
+.entry > ul > li{ margin:0 0 6px; line-height:1.62; }
+
+/* "Blocked:" / "Viability:" run-in labels, so the eye can jump to the
+   right line instead of reading every bullet */
+.lbl{
+  font-family:var(--mono); font-size:10.5px; font-weight:700;
+  letter-spacing:.6px; text-transform:uppercase;
+  color:var(--accent); margin-right:5px;
+}
+.lbl-block{ color:var(--neg-fg); }
+.lbl-via{ color:var(--pos-fg); }
+
+/* Slightly calmer body text - the doc is read for long stretches */
+#content li, #content p{ line-height:1.68; }
+
+@media print{ .entry{ break-inside:avoid; } }
+
+/* ============ TOOLS OVERLAY ============ */
+#tools-btn{gap:6px;white-space:nowrap;}
+#tools-btn kbd{font-family:var(--mono);font-size:9.5px;line-height:1;padding:2px 4px;
+  border:1px solid var(--border-2);border-radius:3px;color:var(--ink-3);background:var(--bg-2);}
+@media (max-width:900px){ #tools-btn kbd{display:none;} }
+@media (max-width:560px){ #tools-btn .tools-label{display:none;} }
+
+/* the "which tab?" picker that drops out of the Tools button */
+#tools-wrap{position:relative;}
+#tools-picker{
+  position:absolute; top:calc(100% + 8px); right:0; z-index:60;
+  min-width:210px; padding:5px; display:none;
+  background:var(--panel); border:1px solid var(--border-2);
+  border-radius:var(--r-md); box-shadow:var(--shadow);
+}
+#tools-picker.open{display:block;}
+#tools-picker .pick-head{
+  font-family:var(--mono); font-size:10px; letter-spacing:1px;
+  text-transform:uppercase; color:var(--ink-3); padding:6px 9px 7px;
+}
+.pick-opt{
+  display:flex; align-items:center; gap:9px; width:100%;
+  padding:8px 9px; border:0; border-radius:var(--r-sm);
+  background:transparent; color:var(--ink-2); cursor:pointer;
+  font-family:var(--sans); font-size:12.5px; text-align:left;
+}
+.pick-opt:hover{ background:var(--panel-2); color:var(--ink); }
+.pick-opt .pick-num{
+  font-family:var(--mono); font-size:9.5px; color:var(--ink-3);
+  border:1px solid var(--border-2); border-radius:3px; padding:2px 5px;
+}
+.pick-opt:hover .pick-num{ color:var(--accent); border-color:var(--accent); }
+
+#tools-overlay{
+  position:fixed;inset:0;z-index:200;display:none;
+  flex-direction:column;background:var(--bg);
+}
+#tools-overlay.open{display:flex;}
+#tools-bar{
+  display:flex;align-items:center;gap:8px;flex:0 0 auto;
+  padding:8px 12px;border-bottom:1px solid var(--border);background:var(--panel);
+}
+#tools-tabs{display:flex;align-items:center;gap:4px;flex:1;min-width:0;overflow-x:auto;
+  scrollbar-width:none;}
+#tools-tabs::-webkit-scrollbar{display:none;}
+.tool-tab{
+  display:inline-flex;align-items:center;gap:6px;white-space:nowrap;flex:0 0 auto;
+  background:transparent;color:var(--ink-3);border:1px solid transparent;
+  border-radius:var(--r-sm);padding:6px 10px;cursor:pointer;
+  font-family:var(--sans);font-size:12px;transition:all .15s var(--ease);
+}
+.tool-tab:hover{color:var(--ink);background:var(--panel-2);}
+.tool-tab[aria-selected="true"]{
+  color:var(--accent);background:var(--accent-soft);border-color:var(--accent);
+}
+.tool-tab .tool-num{font-family:var(--mono);font-size:9.5px;opacity:.6;}
+@media (max-width:700px){ .tool-tab .tool-num{display:none;} }
+
+#tools-panes{position:relative;flex:1 1 auto;min-height:0;}
+.tool-pane{position:absolute;inset:0;display:none;}
+.tool-pane.active{display:block;}
+.tool-pane iframe{width:100%;height:100%;border:0;background:#fff;display:block;}
+.tool-pane .tool-loading{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:12px;color:var(--ink-3);
+  background:var(--bg);pointer-events:none;
+}
+.tool-pane.ready .tool-loading{display:none;}
+body.tools-open{overflow:hidden;}
+
+#scrim{display:none;}
+
+/* ============ RESPONSIVE ============ */
+@media (max-width:960px){
+  #menu-btn{display:inline-flex;}
+  #sidebar{position:fixed;left:0;top:0;height:100vh;transform:translateX(-100%);
+    transition:transform .28s var(--ease);box-shadow:var(--shadow);width:min(88vw,320px);}
+  #sidebar.open{transform:translateX(0);}
+  #scrim{display:block;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:35;
+    opacity:0;pointer-events:none;transition:opacity .25s;}
+  #scrim.show{opacity:1;pointer-events:auto;}
+  #topbar{padding:10px 18px;}
+  #content{padding:0 18px 110px;}
+  .hero{padding:36px 0 26px;}
+  .anchor{left:auto;right:8px;transform:none;top:50%;margin-top:-11px;opacity:.45;}
+  #content h3 .anchor{top:2px;margin-top:0;}
+}
+@media print{
+  #sidebar,#topbar,#totop,#progress,.anchor,#toast,#tools-overlay{display:none!important;}
+  #content{max-width:100%;padding:0;}
+  body{background:#fff;}
+}
+
+
+.doc-fig{ margin:14px 0 18px; padding:10px; border:1px solid var(--border-2);
+  border-radius:10px; background:var(--bg-2); }
+.doc-fig img{ display:block; width:100%; height:auto; border-radius:6px;
+  image-rendering:pixelated; }
+.doc-fig figcaption{ margin-top:8px; font-size:13px; line-height:1.55; color:var(--ink-3); }
+
+/* translucent heading text (RnB) — keeps the blue but lets it sit back */
+#content h3{ color:rgba(114,172,239,.70) !important; }
+#content h2{ color:rgba(209,213,222,.82) !important; }
+.eyebrow{ color:rgba(114,172,239,.78) !important; }
+[data-theme="parchment"] #content h3{ color:rgba(31,95,168,.78) !important; }
+[data-theme="parchment"] #content h2{ color:rgba(47,42,34,.85) !important; }
+[data-theme="parchment"] .eyebrow{ color:rgba(31,95,168,.82) !important; }
+</style>
+<link rel="stylesheet" href="rnb-site.css">
+<script src="rnb-site.js" defer></script>
+
+<script>(function(){try{var t=localStorage.getItem("rnbai-theme");if(t==="astral"||t==="parchment")document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body>
+<div id="progress"></div>
+
+<div id="layout">
+  <nav id="sidebar" aria-label="Table of contents">
+    <div class="side-head">
+      <div class="brand">
+        <span class="brand-dot"></span>
+        <span class="brand-name">Run and Bun</span>
+      </div>
+      <div class="brand-sub">Community AI Reference</div>
+      <div class="search-wrap">
+        <svg class="search-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="search" type="search" placeholder="Search sections&hellip;" autocomplete="off" spellcheck="false" aria-label="Search sections"/>
+        <span class="search-kbd">/</span>
+      </div>
+    </div>
+    <div id="toc"></div>
+    <div class="side-foot">
+      <span class="count" id="c-total"></span>
+      <div id="theme-wrap"><button class="btn" id="theme-btn" type="button" title="Toggle theme" aria-label="Toggle light and dark theme"><svg class="ico-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><svg class="ico-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 13.2A9 9 0 1 1 10.8 3a7 7 0 0 0 10.2 10.2Z"/></svg><svg class="ico-star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.1 5.2L19.5 9l-4 3.6 1.1 5.4-4.6-2.7L7.4 18l1.1-5.4-4-3.6 5.4-.8z"/></svg></button></div>
+    </div>
+  </nav>
+  <div id="scrim"></div>
+
+  <div id="main">
+    <div id="topbar">
+      <button class="btn" id="menu-btn" type="button" aria-label="Open contents"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+      <div class="crumb" id="crumb"><b>Overview</b></div>
+      <div id="tools-wrap"><button class="btn" id="tools-btn" type="button" title="Open tools (C)" aria-label="Open tools">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        <span class="tools-label">Tools</span><kbd>C</kbd>
+      </button><div id="tools-picker" role="menu"></div></div>
+    </div>
+
+    <div id="content">
+<div class="hero">
+        <span class="eyebrow">Community Reference &middot; Battle AI</span>
+        <h1>Run and Bun AI Reference</h1>
+        <p>Croven&rsquo;s Run and Bun (1.07) AI document &mdash; every move score, condition,
+           and switch rule, reorganized for lookup mid-fight.</p>
+        <div class="stats">
+          <div class="stat"><b id="n-major">6</b><span>Sections</span></div>
+          <div class="stat"><b id="n-minor">60</b><span>Entries</span></div>
+          <div class="stat"><b>1.07</b><span>Version</span></div>
+        </div>
+      </div>
+<p class="meek"><b>Source &amp; caveat.</b> The content here is Croven&rsquo;s, with thanks to
+Emi, Terra, Tennis, Xavion, 3 Plates, qsns and Dekzeh. Croven notes it is
+&ldquo;not a completely exhaustive document&rdquo; &mdash; not every move and score is listed,
+and mistakes are possible. Unlike the Null reference, <b>none of this has been verified
+against the game&rsquo;s source</b>; it is presented as written. Report corrections to
+croven on Discord.</p>
+<h2 id="overview">Overview</h2>
+<h3 id="brief-summary-about-run-and-bun-and-honestly-just-general-po">Brief summary about Run and Bun (and honestly just general Pokemon) AI</h3>
+<p>The AI will calculate a score for every move and choose the highest scoring move to click on any given turn. If multiple moves have the same score, it randomly selects between one of them. In Double battles, the AI will calculate a score for each of its moves on each possible target, and choose the highest scoring move + target. In Run and Bun, the AI knows your full team’s stats, moves, and Abilities at the start of the battle. The rest of this document will list out the possible scores for the relevant moves in the game, and the scenarios in which those scores are possible. As a general rule, the default score for non-attacking moves is <span class="sc-pos">+6</span> (tied with the highest damage attacking move). A quick note about how I decided to lay this out: there are some damaging moves that have special AI (e.g. Relic Song). These moves will still follow the scoring laid out in the following "All damaging moves" section, but they get an additional additive boost as per their special AI. As an example, Relic Song (<span class="sc-pos">+10</span> normally) sums up to <span class="sc-pos">+13</span> when Meloetta sees a slow kill with it. Keep this in mind when using this document. Lastly, the AI has a basic function to check if a move is useless. For example, if Stealth Rocks  are already set, the AI will not try to click SR again. If you are paralyzed, it will not try to paralyze you again. So on and so forth. I will not be listing all possible "bad move" cases here, as they are almost all intuitive and it would unnecessarily bloat this document. If I decide it is not intuitive, I will mention it.</p>
+<h3 id="common-scores-to-be-aware-of">Common scores to be aware of</h3>
+<ul>
+<ul>
+<li>Highest damaging move:                                          <span class="sc-pos">+6</span> (80%), <span class="sc-pos">+8</span> (20%)</li>
+<li>Slow kill (AI kills but is slower than target):         <span class="sc-pos">+9</span> (80%), <span class="sc-pos">+11</span> (20%)</li>
+<li>Fast kill (AI kills and is faster* than target):         <span class="sc-pos">+12</span> (80%), <span class="sc-pos">+14</span> (20%)</li>
+</ul>
+</ul>
+<p>*AI sees speed ties as them being faster than the player</p>
+<h2 id="switch-ai">Switch AI</h2>
+<h3 id="switch-ai">Switch AI</h3>
+<p>The AI in this game does not like to hard switch in battle, but it is possible. There are a few Conditions in Single Battles only. In Double Battles, the AI never switches unless in niche</p>
+<ul>
+<ul>
+<li>situations like Perish Song.</li>
+<li>First, the AI must only be able to use ineffective moves (score &lt;= <span class="sc-neg">-5</span>). This usually happens</li>
+</ul>
+<li>due to Encore, PP stalling, or a Choice item.</li>
+</ul>
+<p>Second, there must be a mon in the AI's party that is either faster than the player mon and not</p>
+<ul>
+<li>OHKO'd, or slower than the players mon and not 2HKO'd.</li>
+</ul>
+<p>(However due to a bug in the code, the 2nd condition isn’t properly coded. In reality, if the AI</p>
+<ul>
+<ul>
+<li>sees 1 mon in the back that is faster, it will think every mon after is also faster.)</li>
+<li>Third, the AI mon must not be below 50% health already.</li>
+</ul>
+</ul>
+<p>If these are all true, then the AI has a 50% chance to switch. The mon it chooses to switch into is based on the post-KO switch AI, with the exception that it will not switch into a mon</p>
+<ul>
+<li>that fails the 2nd check just mentioned.</li>
+<ul>
+<li>(This does not apply to Perish Song as it follows its own routine unknown to us)</li>
+</ul>
+</ul>
+<h2 id="damaging-moves">Damaging Moves</h2>
+<h3 id="all-damaging-moves">All damaging moves</h3>
+<ul>
+<ul>
+<li>AI will roll a random damage roll for all of its attacking moves*, and the highest</li>
+<li>damaging move gets the following score:</li>
+<ul>
+<li><span class="sc-pos">+6</span> (~80%), <span class="sc-pos">+8</span> (~20%)</li>
+</ul>
+<li>If multiple moves kill, then they are all considered the highest damaging move and</li>
+<li>all get this score.</li>
+<li>If a damaging move kills:</li>
+<ul>
+<li>If AI mon is faster, or the move has priority and AI is slower:</li>
+<ul>
+<li>Additional <span class="sc-pos">+6</span></li>
+</ul>
+<li>If AI mon is slower:</li>
+<ul>
+<li>Additional <span class="sc-pos">+3</span></li>
+</ul>
+<li>If AI has Moxie, Beast Boost, Chilling Neigh, or Grim Neigh:</li>
+<li>Additional <span class="sc-pos">+1</span></li>
+</ul>
+</ul>
+<li>If a damaging move has a high crit chance and is Super Effective on the target:</li>
+<ul>
+<ul>
+<li>Additional <span class="sc-pos">+1</span> (50%), no score boost other 50%</li>
+</ul>
+</ul>
+</ul>
+<p>*Note: There are a few specific damaging moves that do not have their damage rolled normally</p>
+<ul>
+<ul>
+<li>and are thus never considered the "highest damaging move".</li>
+<li>These moves are Explosion, Final Gambit, Relic Song, Rollout, Meteor Beam,</li>
+<li>damaging trapping moves (e.g. Whirlpool), and Future Sight.</li>
+<li>All of these moves, with the exceptions of Explosion, Final Gambit, and Rollout,</li>
+<li>still have a check to see if they kill the target mon. If so, the above boosts</li>
+<li>for kills still apply. They will just never get the <span class="sc-pos">+6</span> or <span class="sc-pos">+8</span> boost from being the</li>
+</ul>
+</ul>
+<p>"highest damaging move". They all also have separate AI that is listed later in this file,</p>
+<ul>
+<ul>
+<li>which stacks additively with any score boosts from kills.</li>
+</ul>
+</ul>
+<h3 id="damaging-priority-moves">Damaging priority moves</h3>
+<ul>
+<ul>
+<li>If AI is dead to player mon and slower, all attacking moves with priority</li>
+<li>get an additional <span class="sc-pos">+11</span></li>
+</ul>
+</ul>
+<h3 id="damaging-trapping-moves-whirlpool-fire-spin-sand-tomb-magma-">Damaging Trapping moves (Whirlpool, Fire Spin, Sand Tomb, Magma Storm, Infestation, etc.)</h3>
+<ul>
+<ul>
+<li><span class="sc-pos">+6</span> (~80%), <span class="sc-pos">+8</span> (~20%)</li>
+</ul>
+</ul>
+<h3 id="damaging-speed-reduction-moves-icy-wind-electroweb-rock-tomb">Damaging speed reduction moves (Icy Wind, Electroweb, Rock Tomb, Mud Shot, Low Sweep)</h3>
+<ul>
+<ul>
+<li>If this is the highest damaging move, none of the below bonuses are applied, and the move</li>
+<li>gets the usual <span class="sc-pos">+6</span> (80%)/<span class="sc-pos">+8</span> (20%) for being the highest damaging move</li>
+<li>If target is not Contrary, Clear Body, or White Smoke and AI is slower:</li>
+<ul>
+<li><span class="sc-pos">+6</span></li>
+</ul>
+<li>Else:</li>
+<ul>
+<li><span class="sc-pos">+5</span></li>
+</ul>
+<li>If it is a Double battle and the move is Icy Wind or Electroweb:</li>
+<ul>
+<li>Additional <span class="sc-pos">+1</span></li>
+</ul>
+</ul>
+</ul>
+<h3 id="damaging-atk-spatk-reduction-moves-w-guaranteed-effect-trop-">Damaging Atk/SpAtk reduction moves w/ guaranteed effect (Trop Kick, Skitter Smack, etc.)</h3>
+<ul>
+<ul>
+<li>If this is the highest damaging move, none of the below bonuses are applied, and the move</li>
+<li>gets the usual <span class="sc-pos">+6</span> (80%)/<span class="sc-pos">+8</span> (20%) for being the highest damaging move</li>
+</ul>
+</ul>
+<p>If target is not Contrary, Clear Body, or White Smoke, and has a move of the corresponding</p>
+<ul>
+<li>split (e.g. special move if AI is considering Skitter Smack):</li>
+<ul>
+<ul>
+<li><span class="sc-pos">+6</span></li>
+</ul>
+<li>Else:</li>
+<ul>
+<li><span class="sc-pos">+5</span></li>
+</ul>
+<li>If it is a Double battle and the move is spread:</li>
+<ul>
+<li>Additional <span class="sc-pos">+1</span></li>
+</ul>
+</ul>
+</ul>
+<h3 id="damaging-2-spdef-reduction-moves-w-guaranteed-effect-acid-sp">Damaging -2 SpDef reduction moves w/ guaranteed effect (Acid Spray)</h3>
+<ul>
+<ul>
+<li>Regardless of whether this is the highest damaging move, these moves receive an additional ss+6 on top of any standard scoring for highest damage/kill etc.</li>
+</ul>
+</ul>
+<h2 id="specific-moves">Specific Moves</h2>
+<h3 id="preamble">Preamble</h3>
+<p>Pokemon Run and Bun (1.07) AI document Created by Croven Thank you to Emi, Terra, Tennis, Xavion, 3 Plates, qsns, and of course Dekzeh for helping This document is intended to help you understand what the AI will do on a given turn. This is not a completely exhaustive document, I did not list out every possible move and their possible score. I did my best to capture the scores for every relevant move, but it is possible I missed something. If I missed something important, or you find a mistake here, please DM me on Discord (croven) and I will do my best to address it. I hope this document helps you in your playthrough of Run and Bun! :)</p>
+<h3 id="future-sight">Future Sight</h3>
+<ul>
+<li>If AI is faster than target and is KO’d by target:</li>
+<ul>
+<li><span class="sc-pos">+8</span></li>
+</ul>
+<li>Else:</li>
+<ul>
+<li><span class="sc-pos">+6</span></li>
+</ul>
+<li>Note: This stacks with bonuses for kills listed in the “All damaging moves” section.</li>
+</ul>
+<h3 id="relic-song">Relic Song</h3>
+<ul>
+<ul>
+<li>If in Meloetta base form:</li>
+<ul>
+<li><span class="sc-pos">+10</span></li>
+</ul>
+<li>If in Meloetta Pirouette form:</li>
+<ul>
+<li>Never Relic Songs (score is <span class="sc-neg">-20</span>)</li>
+</ul>
+<li>Note: This stacks with bonuses for kills listed in the “All damaging moves” section.</li>
+</ul>
+</ul>
+<h3 id="sucker-punch">Sucker Punch</h3>
+<ul>
+<li>If AI used Sucker Punch last turn:</li>
+<ul>
+<li><span class="sc-neg">-20</span> (50%), no score change other 50%</li>
+</ul>
+<li>Note: Whether the Sucker failed or not last turn does not affect its score in any way</li>
+</ul>
+<h3 id="pursuit">Pursuit</h3>
+<ul>
+<ul>
+<li>If Pursuit can KO player mon:</li>
+<ul>
+<li><span class="sc-pos">+10</span></li>
+</ul>
+<li>If Pursuit cannot KO player mon:</li>
+<ul>
+<li>If player mon is below 20% HP:</li>
+<ul>
+<li><span class="sc-pos">+10</span></li>
+</ul>
+<li>If player mon is below 40% HP:</li>
+<ul>
+<li><span class="sc-pos">+8</span> (50%), no score boost other 50%</li>
+</ul>
+</ul>
+<li>Regardless of above conditions, if AI is faster:</li>
+<ul>
+<li>Additional <span class="sc-pos">+3</span></li>
+</ul>
+</ul>
+</ul>
+<p>Note: The bonuses for kill and AI outspeeding stack with the bonus for kill listed in the “All</p>
+<ul>
+<li>damaging moves” section.</li>
+</ul>
+<h3 id="fell-stinger">Fell Stinger</h3>
+<ul>
+<ul>
+<li>If AI isn’t at max Atk stage and Fell Stinger KOs:</li>
+<ul>
+<li>If AI is faster:</li>
+<ul>
+<li>Total score of <span class="sc-pos">+21</span> (80%), <span class="sc-pos">+23</span> (20%)</li>
+</ul>
+<li>If AI is slower:</li>
+<ul>
+<li>Total score of <span class="sc-pos">+15</span> (80%), <span class="sc-pos">+17</span> (20%)</li>
+</ul>
+</ul>
+<li>Otherwise:</li>
+<ul>
+<li>Treated as a normal damaging move</li>
+</ul>
+</ul>
+</ul>
+<h3 id="rollout">Rollout</h3>
+<ul>
+<li>Always <span class="sc-pos">+7</span></li>
+</ul>
+<h3 id="stealth-rock">Stealth Rock</h3>
+<ul>
+<ul>
+<li>If first turn out:</li>
+<ul>
+<li><span class="sc-pos">+8</span> (25%), <span class="sc-pos">+9</span> (75%)</li>
+</ul>
+<li>Else:</li>
+<ul>
+<li><span class="sc-pos">+6</span> (25%), <span class="sc-pos">+7</span> (75%)</li>
+</ul>
+</ul>
+</ul>
+<h3 id="spikes-toxic-spikes">Spikes, Toxic Spikes</h3>
+<ul>
+<ul>
+<li>If first turn out:</li>
+<ul>
+<li><span class="sc-pos">+8</span> (25%), <span class="sc-pos">+9</span> (75%)</li>
+</ul>
+<li>Else:</li>
+<ul>
+<li><span class="sc-pos">+6</span> (25%), <span class="sc-pos">+7</span> (75%)</li>
+</ul>
+</ul>
+</ul>
+<p>Note: If at least 1 of the corresponding spikes is up already, score is lowered by 1 always</p>
+<h3 id="sticky-web">Sticky Web</h3>
+<ul>
+<ul>
+<li>If first turn out:</li>
+<ul>
+<li><span class="sc-pos">+9</span> (25%), <span class="sc-pos">+12</span> (75%)</li>
+</ul>
+<li>Else:</li>
+<ul>
+<li><span class="sc-pos">+6</span> (25%), <span class="sc-pos">+9</span> (75%)</li>
+</ul>
+</ul>
+</ul>
+<h3 id="protect-king-s-shield">Protect, King's Shield</h3>
+<ul>
+<ul>
+<li>Base: <span class="sc-pos">+6</span></li>
+</ul>
+</ul>
+<p>If AI is inflicted with any of the following: Poison, Burn, Cursed, Infatuated, Perish Songed,</p>
+<ul>
+<li>Leech Seeded, Yawned:</li>
+<ul>
+<ul>
+<li>Additional <span class="sc-neg">-2</span></li>
+</ul>
+<li>If player mon is inflicted with any of the above:</li>
+<ul>
+<li>Additional <span class="sc-pos">+1</span></li>
+</ul>
+<li>If it's AI mon's first turn out and it is not a double battle:</li>
+<ul>
+<li>Additional <span class="sc-neg">-1</span></li>
+</ul>
+<li>AI will not protect if they die to secondary damage afterwards (weather, status, etc.)</li>
+<li>If AI used protect last turn, 50% chance to never use protect this turn (<span class="sc-neg">-20</span>).</li>
+<li>If AI used protect last 2 turns, never uses protect this turn.</li>
+<li>Note for Clifford and Macey double:</li>
+<ul>
+<li>It appears that the Passimian gets an additional <span class="sc-pos">+8</span> to Detect since its partner has Huge</li>
+</ul>
+<li>Power and it has Receiver, amounting to a score of <span class="sc-pos">+14</span>.</li>
+<li>King's Shield has no unique AI, and is equivalent to Protect.</li>
+</ul>
+</ul>
+<h3 id="fling">Fling</h3>
+<ul>
+<ul>
+<li>If the Fling's effect raises the targets speed (e.g. Salac Berry)</li>
+<li>and AI partner has Weakness Policy, and Fling is super effective:</li>
+<ul>
+<li><span class="sc-pos">+12</span></li>
+</ul>
+<li>If the Fling's effect raises the targets speed, but no WP/Fling isn't SE:</li>
+<ul>
+<li><span class="sc-pos">+9</span></li>
+</ul>
+</ul>
+</ul>
+<h3 id="role-play">Role Play</h3>
+<p>If the AI's partner has one of the following Abilities, and the AI mon has none of the following</p>
+<ul>
+<li>Abilities - Huge Power, Pure Power, Protean, Tough Claws:</li>
+<ul>
+<ul>
+<li><span class="sc-pos">+9</span></li>
+</ul>
+<li>Else</li>
+<ul>
+<li><span class="sc-neg">-20</span></li>
+</ul>
+</ul>
+</ul>
+<h3 id="shadow-sneak-aqua-jet-ice-shard">Shadow Sneak, Aqua Jet, Ice Shard</h3>
+<ul>
+<ul>
+<li>Special case for doubles here.</li>
+<li>If their partner has Weakness Policy and this move is super effective on</li>
+<li>the partner, these get a score of <span class="sc-pos">+12</span> total.</li>
+</ul>
+</ul>
+<h3 id="magnitude-earthquake">Magnitude, Earthquake</h3>
+<ul>
+<ul>
+<li>Special case for doubles here.</li>
+</ul>
+</ul>
+<p>If their partner isn't grounded OR their partner is using Magnet Rise and faster than EQ user</p>
+<ul>
+<ul>
+<li>Basically, if partner won't be hit by EQ this turn:</li>
+<ul>
+<li>Additional <span class="sc-pos">+2</span></li>
+</ul>
+<li>Else if partner will be hit by EQ and is Fire, Poison, Electric, Rock type:</li>
+<ul>
+<li>Additional <span class="sc-neg">-10</span></li>
+</ul>
+</ul>
+</ul>
+<p>Note that this check doesn't happen if partner is immune to EQ, so Crobat for example never</p>
+<ul>
+<li>causes an EQ score reduction.</li>
+<ul>
+<li>Else if partner will be hit by EQ and is not one of the above types:</li>
+<ul>
+<li>Additional <span class="sc-neg">-3</span></li>
+</ul>
+</ul>
+</ul>
+<h3 id="imprison">Imprison</h3>
+<ul>
+<ul>
+<li>If player mon has at least one move in common with AI mon:</li>
+<ul>
+<li><span class="sc-pos">+9</span></li>
+</ul>
+<li>Else:</li>
+<ul>
+<li>Never used (<span class="sc-neg">-20</span>)</li>
+</ul>
+</ul>
+</ul>
+<p>Baton Pass If AI has a mon alive to BP into, and AI is either behind a Substitute or has a stat raised (or</p>
+<ul>
+<li>both):</li>
+<ul>
+<ul>
+<li><span class="sc-pos">+14</span></li>
+</ul>
+</ul>
+<li>If AI mon is last mon out:</li>
+<ul>
+<ul>
+<li>Never used (<span class="sc-neg">-20</span>)</li>
+</ul>
+</ul>
+<li>If AI has a mon alive to BP into, but has no Substitute or stat increases:</li>
+<ul>
+<ul>
+<li><span class="sc-pos">+0</span></li>
+</ul>
+</ul>
+</ul>
+<h3 id="tailwind">Tailwind</h3>
+<ul>
+<ul>
+<li>If AI mon or its partner are slower than any player mon on the field:</li>
+<ul>
+<li><span class="sc-pos">+9</span></li>
+</ul>
+<li>Else:</li>
+<ul>
+<li><span class="sc-pos">+5</span></li>
+</ul>
+</ul>
+</ul>
+<h3 id="trick-room">Trick Room</h3>
+<ul>
+<ul>
+<li>If AI mon or its partner are slower than any player mon on the field:</li>
+<ul>
+<li><span class="sc-pos">+10</span></li>
+</ul>
+<li>Else:</li>
+<ul>
+<li><span class="sc-pos">+5</span></li>
+</ul>
+<li>If Trick Room is already up:</li>
+<ul>
+<li><span class="sc-neg">-20</span></li>
+</ul>
+</ul>
+</ul>
+<h3 id="fake-out">Fake Out</h3>
+<ul>
+<ul>
+<li>If it’s the AI mon’s first turn out and not targeting Shield Dust / Inner Focus mon:</li>
+<ul>
+<li><span class="sc-pos">+9</span></li>
+</ul>
+</ul>
+</ul>
+<h3 id="helping-hand-follow-me">Helping Hand, Follow Me</h3>
+<ul>
+<ul>
+<li><span class="sc-pos">+6</span></li>
+</ul>
+</ul>
+<p>AI will not use either of these moves if their partner is also using this move, or their partner is</p>
+<ul>
+<li>using a Status move</li>
+</ul>
+<h3 id="final-gambit">Final Gambit</h3>
+<ul>
+<ul>
+<li>If AI mon is faster and has a strictly higher current HP number than player mon:</li>
+<ul>
+<li><span class="sc-pos">+8</span></li>
+</ul>
+<li>If above is not true, and AI is faster and dies to player mon:</li>
+<ul>
+<li><span class="sc-pos">+7</span></li>
+</ul>
+<li>Else:</li>
+<ul>
+<li><span class="sc-pos">+6</span></li>
+</ul>
+</ul>
+</ul>
+<h3 id="electric-psychic-grassy-misty-terrain">Electric/Psychic/Grassy/Misty Terrain</h3>
+<ul>
+<ul>
+<li>If AI holding Terrain Extender:</li>
+<ul>
+<li><span class="sc-pos">+9</span></li>
+</ul>
+<li>Else:</li>
+<ul>
+<li><span class="sc-pos">+8</span></li>
+</ul>
+</ul>
+</ul>
+<h3 id="light-screen-reflect">Light Screen / Reflect</h3>
+<ul>
+<ul>
+<li>Starts at <span class="sc-pos">+6</span></li>
+<li>If player mon has a move that corresponds with the screen (e.g. physical move for Reflect):</li>
+<ul>
+<li>If AI mon has Light Clay:</li>
+<ul>
+<li>Additional <span class="sc-pos">+1</span></li>
+</ul>
+<li>Another additional <span class="sc-pos">+1</span> is applied 50% of the time</li>
+</ul>
+<li>In summary: <span class="sc-pos">+6</span> base, can be <span class="sc-pos">+7</span> or <span class="sc-pos">+8</span> depending on player moves, Light Clay being held, and</li>
+</ul>
+<li>RNG</li>
+</ul>
+<h3 id="substitute">Substitute</h3>
+<ul>
+<ul>
+<li>Starts at <span class="sc-pos">+6</span></li>
+<li>If player mon is asleep:</li>
+<ul>
+<li>Additional <span class="sc-pos">+2</span></li>
+</ul>
+<li>If player mon is Leech Seeded and AI mon is faster:</li>
+<ul>
+<li>Additional <span class="sc-pos">+2</span></li>
+</ul>
+<li>Regardless of above conditions:</li>
+<ul>
+<li>Additional <span class="sc-neg">-1</span> (50%), no score change other 50%</li>
+</ul>
+<li>If player mon has any sound-based move:</li>
+<ul>
+<li>Additional <span class="sc-neg">-8</span></li>
+</ul>
+<li>If AI is at 50% HP or lower, or the player mon has Infiltrator:</li>
+<li>Never used (<span class="sc-neg">-20</span>)</li>
+</ul>
+</ul>
+<h3 id="explosion-self-destruct-misty-explosion">Explosion, Self Destruct, Misty Explosion</h3>
+<ul>
+<ul>
+<li>If AI mon is at less than 10% HP:</li>
+<ul>
+<li><span class="sc-pos">+10</span></li>
+</ul>
+<li>Else if AI mon is at less than 33% HP:</li>
+<ul>
+<li><span class="sc-pos">+8</span> (~70%), <span class="sc-pos">+0</span> (~30%)</li>
+</ul>
+<li>Else if AI mon is at less than 66% HP:</li>
+<ul>
+<li><span class="sc-pos">+7</span> (50%), <span class="sc-pos">+0</span> (50%)</li>
+</ul>
+<li>Else:</li>
+<ul>
+<li><span class="sc-pos">+7</span> (~5%), <span class="sc-pos">+0</span> (~95%)</li>
+</ul>
+<li>AI will not use a Boom move if the target is immune, or if the AI mon is the last mon</li>
+<li>and the player has more than one mon alive.</li>
+<li>If both AI and player are on their last mon, then the Boom move will get a <span class="sc-neg">-1</span> applied</li>
+<li>to its score</li>
+</ul>
+</ul>
+<h3 id="memento">Memento</h3>
+<ul>
+<ul>
+<li>If AI mon is at less than 10% HP:</li>
+<ul>
+<li><span class="sc-pos">+16</span></li>
+</ul>
+<li>Else if AI mon is at less than 33% HP:</li>
+<ul>
+<li><span class="sc-pos">+14</span> (~70%), <span class="sc-pos">+6</span> (~30%)</li>
+</ul>
+<li>Else if AI mon is at less than 66% HP:</li>
+<ul>
+<li><span class="sc-pos">+13</span> (50%), <span class="sc-pos">+6</span> (50%)</li>
+</ul>
+<li>Else:</li>
+<ul>
+<li><span class="sc-pos">+13</span> (~5%), <span class="sc-pos">+6</span> (~95%)</li>
+</ul>
+<li>AI will not use Memento if the AI is on its last mon.</li>
+</ul>
+<li>Thunder Wave, Stun Spore, Glare, Nuzzle, Zap Cannon:</li>
+<ul>
+<li>If one of the following conditions are true:</li>
+<ul>
+<li>Player mon is faster than AI mon, but slower than AI mon after paralysis (1/4 speed)</li>
+<li>AI mon has Hex or a move that flinches</li>
+<li>Player mon is infatuated or confused</li>
+<li><span class="sc-pos">+8</span></li>
+</ul>
+<li>Else, none of the above conditions are met:</li>
+<ul>
+<li><span class="sc-pos">+7</span></li>
+</ul>
+<li>Regardless of above conditions:</li>
+<ul>
+<li>Additional <span class="sc-neg">-1</span> (50%), no score change other 50%</li>
+</ul>
+</ul>
+</ul>
+<h3 id="will-o-wisp">Will-o-Wisp</h3>
+<ul>
+<li>Starts at <span class="sc-pos">+6</span></li>
+<li>~37% of the time, the following conditions are checked:</li>
+<ul>
+<ul>
+<li>If target has a physical attacking move:</li>
+<li>Additional <span class="sc-pos">+1</span></li>
+<li>If AI mon or its partner has Hex:</li>
+<ul>
+<li>Additional <span class="sc-pos">+1</span></li>
+</ul>
+</ul>
+<li>The other ~63% of the time:</li>
+<ul>
+<li>No other bonuses, so just <span class="sc-pos">+6</span></li>
+</ul>
+</ul>
+</ul>
+<h3 id="trick-switcheroo">Trick, Switcheroo</h3>
+<ul>
+<ul>
+<li>If AI is holding one of the following: Toxic Orb, Flame Orb, Black Sludge:</li>
+<ul>
+<li><span class="sc-pos">+6</span> (50%), <span class="sc-pos">+7</span> (50%)</li>
+</ul>
+<li>If AI is holding one of the following: Iron Ball, Lagging Tail, Sticky Barb:</li>
+<ul>
+<li><span class="sc-pos">+7</span></li>
+</ul>
+<li>Else:</li>
+<ul>
+<li><span class="sc-pos">+5</span></li>
+</ul>
+</ul>
+</ul>
+<h3 id="yawn-dark-void-and-all-other-non-damaging-sleep-moves-i-e-gr">Yawn, Dark Void, and all other non-damaging sleep moves (i.e. Grasswhistle, Sing)</h3>
+<ul>
+<ul>
+<li>Starts at + 6</li>
+<li>25% of the time, AI considers the following conditions (assuming it sees no kill):</li>
+</ul>
+</ul>
+<p>If player mon can be put to sleep (no sleep-preventing abilities, no pre-existing status, no</p>
+<ul>
+<ul>
+<li>terrain, etc.):</li>
+<ul>
+<ul>
+<li>Additional <span class="sc-pos">+1</span></li>
+<li>If above is true, and AI has Dream Eater or Nightmare, and player does not have Snore or</li>
+</ul>
+<li>Sleep Talk:</li>
+<ul>
+<li>Additional <span class="sc-pos">+1</span></li>
+<li>If AI or AI's partner has Hex:</li>
+<li>Additional <span class="sc-pos">+1</span></li>
+</ul>
+</ul>
+<li>The other 75% of the time:</li>
+<ul>
+<li>No additional bonuses, so just <span class="sc-pos">+6</span></li>
+</ul>
+</ul>
+<li>Poisoning Moves:</li>
+<ul>
+<li>Starts at <span class="sc-pos">+6</span></li>
+<li>~38% of the time, if the AI cannot KO the player mon, the following checks are applied:</li>
+<ul>
+<li>If player mon can be poisoned and is above 20% HP:</li>
+<ul>
+<li>If AI mon has Hex, Venom Drench, Venoshock or the ability Merciless</li>
+<li>and the player has no damaging moves:</li>
+<li>Additional <span class="sc-pos">+2</span></li>
+</ul>
+</ul>
+</ul>
+</ul>
+<p>Due to a bug in the code, some checks that should be happening don’t actually happen. They now have been left out in the AI Doc.</p>
+<ul>
+<ul>
+<li>The other ~62% of the time:</li>
+<ul>
+<li>No additional bonus, so just the base <span class="sc-pos">+6</span></li>
+</ul>
+</ul>
+</ul>
+<p>General setup (Dragon Dance, Calm Mind, etc.*)</p>
+<ul>
+<ul>
+<li>If player mon can KO AI (and AI doesn't have Sturdy/Sash active), the AI mon will never</li>
+</ul>
+<li>setup (<span class="sc-neg">-20</span>)</li>
+<ul>
+<li>If player mon has Unaware, the AI mon will never set up (<span class="sc-neg">-20</span>), unless the move is Power-up</li>
+</ul>
+<li>Punch, Swords Dance, or Howl (Unaware doesn’t affect the score of these 3 moves</li>
+<li>specifically)</li>
+</ul>
+<p>Note: Attack stat increasing moves with 100% effect also fall into this category (Power-up</p>
+<ul>
+<li>Punch, Charge Beam). Notably, this means that Brawly's Scraggy won't</li>
+<li>Power-up Punch if you have any killing rolls on it, even if PuP is a kill.</li>
+<li>*Full list of moves that fall into this category:</li>
+<ul>
+<li>Power-up Punch, Swords Dance, Howl, Stuff Cheeks, Barrier, Acid Armor, Iron Defense,</li>
+</ul>
+<li>Cotton Guard, Charge Beam, Tail Glow, Nasty Plot, Cosmic</li>
+<li>Power, Bulk Up, Calm Mind, Dragon Dance, Coil, Hone Claws, Quiver Dance, Shift Gear,</li>
+<li>Shell Smash, Growth, Work Up, Curse, Coil, No Retreat</li>
+</ul>
+<h3 id="offensive-setup-dragon-dance-shift-gear-swords-dance-howl-sh">Offensive Setup (Dragon Dance, Shift Gear, Swords Dance, Howl, Sharpen, Meditate, Hone Claws)</h3>
+<ul>
+<ul>
+<li>Starts at <span class="sc-pos">+6</span></li>
+<li>If player mon is incapacitated (frozen with no thawing move, asleep, recharging, loafing</li>
+</ul>
+<li>around due to Truant):</li>
+<ul>
+<ul>
+<li>Additional <span class="sc-pos">+3</span></li>
+</ul>
+<li>If AI is slower and is 2HKO’d by player mon:</li>
+<ul>
+<li>Additional <span class="sc-neg">-5</span></li>
+</ul>
+</ul>
+</ul>
+<p>Due to a bug in the code, some checks that should be happening don’t actually happen. They now have been left out in the AI Doc.</p>
+<h3 id="defensive-setup-acid-armor-barrier-cotton-guard-harden-iron-">Defensive Setup (Acid Armor, Barrier, Cotton Guard, Harden, Iron Defense, Stockpile, Cosmic Power)</h3>
+<ul>
+<ul>
+<li>Starts at <span class="sc-pos">+6</span></li>
+<li>If AI is slower and is 2HKO’d by player mon:</li>
+<ul>
+<li>Additional <span class="sc-neg">-5</span></li>
+</ul>
+<li>~95% of the time, all the following checks are applied:</li>
+<li>If player mon is incapacitated:</li>
+<ul>
+<li>Additional <span class="sc-pos">+2</span></li>
+</ul>
+</ul>
+<li>If the move boosts Defense and Special Defense:</li>
+<ul>
+<li>If AI mon is less than <span class="sc-pos">+2</span> Def or less than <span class="sc-pos">+2</span> SpDef:</li>
+<ul>
+<li>Additional <span class="sc-pos">+2</span></li>
+</ul>
+</ul>
+</ul>
+<p>Due to a bug in the code, some checks that should be happening don’t actually happen. They now have been left out in the AI Doc.</p>
+<h3 id="coil-bulk-up-calm-mind-quiver-dance">Coil, Bulk Up, Calm Mind, Quiver Dance</h3>
+<p>Note: Despite No Retreat also boosting Special Defense, AI treats it identically to Bulk Up</p>
+<ul>
+<ul>
+<li>Starts at <span class="sc-pos">+6</span></li>
+</ul>
+</ul>
+<p>These four moves are treated as “Defensive Setup” or “Offensive Setup” depending on the moves of the player’s mon on the field. If the move boosts physical stats (Coil, Bulk Up, No Retreat), then the AI checks if the player mon has a physical attacking move and no special attacking moves. If this is true, then these three moves are treated as “Defensive Setup”. If the player has no physical attacks or at least one special attack, then these moves are treated as “Offensive Setup”. Calm Mind and Quiver Dance are treated the same, except with special and physical swapped. So if the player mon has a special attacking move and no physical attacking moves, CM/QD are treated as “Defensive Setup”. Otherwise, they are considered “Offensive Setup”. See the sections above for how the AI scores “Defensive” and “Offensive” setup.</p>
+<h3 id="agility-rock-polish-autotomize">Agility, Rock Polish, Autotomize</h3>
+<ul>
+<ul>
+<li>If AI is slower than player mon:</li>
+<ul>
+<li><span class="sc-pos">+7</span></li>
+</ul>
+<li>Else:</li>
+<ul>
+<li>Never used (<span class="sc-neg">-20</span>)</li>
+</ul>
+</ul>
+</ul>
+<h3 id="tail-glow-nasty-plot-work-up">Tail Glow, Nasty Plot, Work Up</h3>
+<ul>
+<ul>
+<li>Starts at <span class="sc-pos">+6</span></li>
+<li>If player mon is incapacitated (frozen with no thawing move, asleep, recharging, loafing</li>
+</ul>
+<li>around due to Truant):</li>
+<ul>
+<ul>
+<li>Additional <span class="sc-pos">+3</span></li>
+</ul>
+<li>If above is not true, and player mon cannot 3HKO AI mon:</li>
+<ul>
+<li>Additional <span class="sc-pos">+1</span></li>
+<li>If AI is also faster than player:</li>
+<ul>
+<li>Additional <span class="sc-pos">+1</span></li>
+</ul>
+</ul>
+<li>If AI is slower and is 2HKO’d by player mon:</li>
+<ul>
+<li>Additional <span class="sc-neg">-5</span></li>
+</ul>
+<li>If AI is at <span class="sc-pos">+2</span> SpAtk or higher:</li>
+<ul>
+<li>Additional <span class="sc-neg">-1</span></li>
+</ul>
+</ul>
+</ul>
+<h3 id="shell-smash">Shell Smash</h3>
+<ul>
+<ul>
+<li>Starts at <span class="sc-pos">+6</span></li>
+<li>If player mon is incapacitated (frozen, asleep, recharging):</li>
+<ul>
+<li>Additional <span class="sc-pos">+3</span></li>
+</ul>
+<li>If player mon cannot KO AI mon if Shell Smash is used this turn:</li>
+<ul>
+<li>Additional <span class="sc-pos">+2</span></li>
+</ul>
+<li>If player mon can KO AI mon if Shell Smash is used this turn:</li>
+<ul>
+<li>Additional <span class="sc-neg">-2</span></li>
+<li>Note: AI factors in Smash drop (and White Herb) if it is faster</li>
+</ul>
+<li>If AI mon's attack stat is <span class="sc-pos">+1</span> or higher, or either attacking stat is at <span class="sc-pos">+6</span>:</li>
+<ul>
+<li>Never used (<span class="sc-neg">-20</span>)</li>
+</ul>
+</ul>
+</ul>
+<h3 id="belly-drum">Belly Drum</h3>
+<ul>
+<ul>
+<li>If player mon is incapacitated (frozen, asleep, recharging):</li>
+<ul>
+<li><span class="sc-pos">+9</span></li>
+</ul>
+<li>If above is not true and player mon cannot KO AI mon after a Belly Drum*:</li>
+<ul>
+<li><span class="sc-pos">+8</span></li>
+</ul>
+<li>If neither of the above conditions is true:</li>
+<ul>
+<li><span class="sc-pos">+4</span></li>
+</ul>
+</ul>
+<li>*Note: AI sees if it is holding a Sitrus berry and takes that into account</li>
+</ul>
+<h3 id="focus-energy-laser-focus">Focus Energy, Laser Focus</h3>
+<ul>
+<ul>
+<li>If AI has Super Luck/Sniper, or is holding Scope Lens, or has a move with high crit chance:</li>
+<ul>
+<li><span class="sc-pos">+7</span></li>
+</ul>
+<li>Else:</li>
+<ul>
+<li><span class="sc-pos">+6</span></li>
+</ul>
+<li>AI will not use these moves if the player mon has Shell Armor or Battle Armor.</li>
+</ul>
+</ul>
+<h3 id="coaching">Coaching</h3>
+<ul>
+<ul>
+<li>Starts at <span class="sc-pos">+6</span></li>
+<li>If in a double battle and partner doesn’t have Contrary:</li>
+<ul>
+<li>If partner’s Attack stage is less than <span class="sc-pos">+2</span>:</li>
+<ul>
+<li>Increase score by 1 - current Attack stage (e.g. if Attack is unboosted, score gets</li>
+</ul>
+<li>increased by 1. If Atk is at <span class="sc-neg">-1</span>, score gets increased by 2)</li>
+<li>If partner’s Defense stage is less than <span class="sc-pos">+2</span>:</li>
+<ul>
+<li>Increase score by 1 - current Defense stage (e.g. if Defense is unboosted, score gets</li>
+</ul>
+<li>increased by 1. If Def is at <span class="sc-neg">-1</span>, score gets increased by 2)</li>
+<li>Regardless of partner Atk/Def stage:</li>
+<li>Additional <span class="sc-pos">+1</span> is applied ~80% of the time</li>
+</ul>
+<li>If not in a Double battle, or the partner has Contrary:</li>
+<ul>
+<li>Never used (<span class="sc-neg">-20</span>)</li>
+</ul>
+</ul>
+</ul>
+<p>For example: if an AI mon has Coaching and its partner has no stat changes (Atk and Def are</p>
+<ul>
+<li>both <span class="sc-pos">+0</span>), then Coaching has a <span class="sc-pos">+8</span> score ~20% of the time, and <span class="sc-pos">+9</span> ~80% of the time.</li>
+</ul>
+<h3 id="note-for-pokemon-with-contrary">Note for Pokemon with Contrary</h3>
+<p>Attacking moves that lower stats (Overheat, Leaf Storm, and Superpower) are treated as setup moves when used by Pokemon with Contrary. This only applies if the move is not the highest damaging move and the move does not kill. In this case, the moves get the same score as their setup counterparts (for example, Overheat and Leaf Storm are equivalent to Nasty Plot). If the attacking move is the highest damaging move already, its score is not affected by Contrary and the move is simply treated as a normal damaging move. These “setup” moves are a little unique and do not have the checks that normal setup moves have. Contrary Overheat, Leaf Storm, and Superpower can be used against Unaware mons, and can also be used even if the AI mon is threatened with an OHKO or faster 2HKO, despite Nasty Plot and Bulk Up receiving heavy penalties in those cases.</p>
+<h3 id="meteor-beam">Meteor Beam</h3>
+<ul>
+<ul>
+<li>If AI is holding a Power Herb:</li>
+<ul>
+<li><span class="sc-pos">+9</span></li>
+</ul>
+<li>Else:</li>
+<ul>
+<li>Never used (<span class="sc-neg">-20</span>)</li>
+</ul>
+</ul>
+</ul>
+<h3 id="destiny-bond">Destiny Bond</h3>
+<ul>
+<ul>
+<li>If AI is faster and dies to player mon:</li>
+<ul>
+<li><span class="sc-pos">+7</span> (~81%), <span class="sc-pos">+6</span> (~19%)</li>
+</ul>
+<li>If AI is slower:</li>
+<ul>
+<li><span class="sc-pos">+5</span> (50%), <span class="sc-pos">+6</span> (50%)</li>
+</ul>
+</ul>
+</ul>
+<h3 id="note-about-recovery-moves">NOTE ABOUT RECOVERY MOVES</h3>
+<ul>
+<ul>
+<li>I have taken the liberty of hiding the "AI deciding if it should recover" logic</li>
+<li>in this section since it's a little bit long and is often irrelevant (for example</li>
+<li>if you are baiting a kill, it doesn't matter what this logic returns). For those</li>
+<li>who are curious, or if it is actually relevant, see the EXTRA DETAILS section at</li>
+<li>the bottom of this document for the full logic.</li>
+</ul>
+</ul>
+<h3 id="recovery-moves-recover-slack-off-heal-order-soft-boiled-roos">Recovery Moves (Recover, Slack Off, Heal Order, Soft-Boiled, Roost, Strength Sap)</h3>
+<ul>
+<ul>
+<li>If AI decides it should recover:</li>
+<ul>
+<li><span class="sc-pos">+7</span></li>
+</ul>
+<li>Else:</li>
+<ul>
+<li><span class="sc-pos">+5</span></li>
+</ul>
+<li>AI will not use Recovery moves if at full (<span class="sc-neg">-20</span>), or at 85% or higher (<span class="sc-neg">-6</span>)</li>
+</ul>
+</ul>
+<h3 id="sun-based-recovery-moves-morning-sun-synthesis-moonlight">Sun-based recovery moves (Morning Sun, Synthesis, Moonlight)</h3>
+<ul>
+<ul>
+<li>If Sun is active and AI decides it should recover:</li>
+<ul>
+<li><span class="sc-pos">+7</span></li>
+</ul>
+<li>If either Sun isn't active, or AI decides it shouldn't recover, it</li>
+<li>recalculates if it should recover using 50% healing and this move</li>
+<li>becomes identical to the Recovery Moves listed above.</li>
+<ul>
+<li><span class="sc-pos">+7</span> if recalculation returns True, <span class="sc-pos">+5</span> if False</li>
+</ul>
+<li>AI will not use Recovery moves if at full (<span class="sc-neg">-20</span>), or at 85% or higher (<span class="sc-neg">-6</span>)</li>
+</ul>
+</ul>
+<h3 id="rest">Rest</h3>
+<ul>
+<ul>
+<li>If AI decides it should recover:</li>
+<ul>
+<li>Then, If one of the following conditions is true:</li>
+<li>AI is holding an item that would cure Sleep (Lum Berry, Chesto Berry, etc.)</li>
+</ul>
+</ul>
+</ul>
+<p>AI has Sleep Talk or Snore AI has Shed Skin/Early Bird AI has Hydration and it is raining.</p>
+<ul>
+<ul>
+<ul>
+<ul>
+<li><span class="sc-pos">+8</span></li>
+</ul>
+<li>If none of the above conditions are true:</li>
+<ul>
+<li><span class="sc-pos">+7</span></li>
+</ul>
+</ul>
+<li>If AI decides it should not recover:</li>
+<ul>
+<li><span class="sc-pos">+5</span></li>
+</ul>
+</ul>
+</ul>
+<h3 id="taunt">Taunt</h3>
+<ul>
+<ul>
+<li>If target has Trick Room and TR is not currently active:</li>
+<ul>
+<li><span class="sc-pos">+9</span></li>
+</ul>
+<li>Else, if target has Defog, Aurora Veil is active, and AI is faster:</li>
+<ul>
+<li><span class="sc-pos">+9</span></li>
+</ul>
+<li>If neither of the above are true:</li>
+<ul>
+<li><span class="sc-pos">+5</span></li>
+</ul>
+</ul>
+</ul>
+<h3 id="encore">Encore</h3>
+<ul>
+<ul>
+<li>If AI is faster and Encore is encouraged*:</li>
+<ul>
+<li><span class="sc-pos">+7</span></li>
+</ul>
+<li>If AI is slower:</li>
+<ul>
+<li><span class="sc-pos">+6</span> (50%), <span class="sc-pos">+5</span> (50%)</li>
+</ul>
+<li>AI will not Encore if target is already Encored or if it is the target's first turn out</li>
+<li>(there is no move for the AI to Encore)</li>
+</ul>
+</ul>
+<p>*The AI looks at the target's last used move and checks if it is one that should be Encored. The list of moves that should be Encored is very long and I will not be listing them all here,</p>
+<ul>
+<ul>
+<li>but it mostly boils down to non-damaging moves.</li>
+</ul>
+</ul>
+<h3 id="counter-mirror-coat">Counter / Mirror Coat</h3>
+<ul>
+<ul>
+<li>Starts at <span class="sc-pos">+6</span></li>
+<li>If player mon can KO AI (and AI doesn't have Sturdy/Sash active)</li>
+<ul>
+<li>Additional <span class="sc-neg">-20</span></li>
+</ul>
+<li>If target can KO AI mon, and AI mon has Sturdy/Focus Sash and is at 100% HP, and target</li>
+</ul>
+<li>only has moves of the corresponding split (e.g. only physical moves for Counter scoring):</li>
+<ul>
+<ul>
+<li>Additional <span class="sc-pos">+2</span></li>
+</ul>
+<li>If target cannot KO AI mon, and target only has moves of the corresponding split:</li>
+<ul>
+<li>Additional <span class="sc-pos">+2</span> (~80%), no score boost other ~20%</li>
+</ul>
+<li>Regardless of above, if AI is faster:</li>
+<ul>
+<li>Additional <span class="sc-neg">-1</span> (25%), no score change other 75%</li>
+</ul>
+<li>Regardless of above, if player has status moves:</li>
+<ul>
+<li>Additional <span class="sc-neg">-1</span> (25%), no score change other 75%</li>
+</ul>
+</ul>
+</ul>
+<h2 id="extra-details">Extra Details</h2>
+<h3 id="extra-details">Extra Details</h3>
+<ul>
+<ul>
+<li>Should AI Recover function:</li>
+<ul>
+<li>Recovery %:</li>
+<ul>
+<li>Standard recovery moves (Recover, Slack Off, Heal Order, Roost, Strength Sap): 50%</li>
+<li>Weather-based recovery moves (Morning Sun, Synthesis, Moonlight): 67%</li>
+<li>Rest: 100%</li>
+</ul>
+<li>If AI mon is Toxic'd:</li>
+<ul>
+<li>Returns False</li>
+</ul>
+<li>If player mon does as much or more damage than would be healed off:</li>
+<ul>
+<li>Returns False</li>
+<li>Note that this calculation uses the Recovery % listed above.</li>
+</ul>
+<li>If AI is faster:</li>
+<ul>
+<li>If player mon can kill AI mon, but cannot after AI mon uses recovery move:</li>
+<li>Returns True</li>
+<li>If player mon cannot kill AI mon:</li>
+<li>If AI mon is below 66% and above 40%:</li>
+<li>Returns True (50%), Returns False (50%)</li>
+<li>If AI mon is below 40%:</li>
+<li>Returns True</li>
+</ul>
+<li>If AI is slower:</li>
+<ul>
+<li>If AI is below 70% HP:</li>
+<li>Returns True (75%), Returns False (25%)</li>
+<li>If AI is below 50% HP:</li>
+<li>Returns True</li>
+</ul>
+<li>If none of the above cases are true, then this function defaults to return False.</li>
+</ul>
+</ul>
+</ul>
+<h2 id="post-ko-switch">Post-KO Switch Scores</h2>
+<p>When the AI sends a Pok&eacute;mon in after one faints, it scores each party member
+against the player&rsquo;s active Pok&eacute;mon and sends the highest.</p>
+<ul>
+<li><span class="sc-pos">+5</span> AI&rsquo;s mon is faster and OHKOs it.</li>
+<li><span class="sc-pos">+4</span> AI&rsquo;s mon is slower but OHKOs it and is not OHKO&rsquo;d.</li>
+<li><span class="sc-pos">+3</span> AI&rsquo;s mon is faster and deals more damage than it takes (by %, not raw).</li>
+<li><span class="sc-pos">+2</span> AI&rsquo;s mon is slower and deals more damage than it takes.</li>
+<li><span class="sc-pos">+1</span> AI&rsquo;s mon is faster.</li>
+<li>0 &mdash; default.</li>
+<li><span class="sc-neg">-1</span> AI&rsquo;s mon is slower and is OHKO&rsquo;d.</li>
+</ul>
+<p>Special cases: <span class="sc-pos">+2</span> for Ditto; <span class="sc-pos">+2</span> for
+Wynaut and Wobbuffet, as long as they are not both slower and OHKO&rsquo;d.</p>
+<h3 id="doubles-switching">Double Battles</h3>
+<p>In doubles the AI behaves the same way but considers only one slot: its first slot
+looks at the player&rsquo;s first slot when deciding what to send in, and its second slot
+looks at the player&rsquo;s second.</p>
+<figure class="doc-fig">
+  <img src="doubles-targets.png" alt="Double battle screenshot with red brackets pairing each AI slot to the player slot it evaluates">
+  <figcaption>Which slot looks at which. The AI&rsquo;s first slot evaluates against the player&rsquo;s
+  first slot, and its second against the player&rsquo;s second &mdash; the pairing runs diagonally
+  on screen, not straight across.</figcaption>
+</figure>
+</div>
+      <button class="btn" id="totop" type="button" title="Back to top" aria-label="Back to top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<div id="tools-overlay" role="dialog" aria-modal="true" aria-label="Tools">
+  <div id="tools-bar">
+    <div id="tools-tabs" role="tablist" aria-label="Tools"></div>
+    <button class="btn" id="tools-zoom" type="button" title="Zoom this panel (+ / - , or Z to cycle)">Zoom: 100%</button>
+    <button class="btn" id="tools-filter" type="button" title="Dim this panel to cut glare (F)">Screen: Normal</button>
+    <a class="btn" id="tools-newtab" href="#" target="_blank" rel="noopener" title="Open the current tool in a new tab">New tab</a>
+    <button class="btn" id="tools-close" type="button" title="Back to docs (Esc)" aria-label="Back to docs">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      Back to docs
+    </button>
+  </div>
+  <div id="tools-panes"></div>
+</div>
+
+<script>
+(function(){
+  var doc = document.documentElement;
+  var content = document.getElementById('content');
+  var toc = document.getElementById('toc');
+  var search = document.getElementById('search');
+  var crumb = document.getElementById('crumb');
+  var toast = document.getElementById('toast');
+  var heads = Array.prototype.slice.call(content.querySelectorAll('h2, h3'));
+
+  /* ---------- theme ---------- */
+  var THEMES = ['astral', 'parchment'];
+  var THEME_LABEL = { astral:'Astral', parchment:'Parchment' };
+  var themeBtn = document.getElementById('theme-btn');
+
+  function markTheme(){
+    var cur = doc.getAttribute('data-theme') || 'astral';
+    var other = cur === 'astral' ? 'parchment' : 'astral';
+    themeBtn.title = 'Theme: ' + THEME_LABEL[cur] + ' \u2014 click for ' + THEME_LABEL[other];
+    themeBtn.setAttribute('aria-label', themeBtn.title);
+  }
+  themeBtn.addEventListener('click', function(){
+    var cur = doc.getAttribute('data-theme') || 'astral';
+    var next = cur === 'astral' ? 'parchment' : 'astral';
+    doc.setAttribute('data-theme', next);
+    try { localStorage.setItem('rnbai-theme', next); } catch(e){}
+    markTheme();
+    say('Theme: ' + THEME_LABEL[next]);
+  });
+  markTheme();
+
+  /* ---------- toast ---------- */
+  var toastTimer;
+  function say(msg){
+    toast.textContent = msg; toast.classList.add('show');
+    clearTimeout(toastTimer); toastTimer = setTimeout(function(){ toast.classList.remove('show'); }, 1700);
+  }
+
+  /* ---------- build TOC + anchor buttons ---------- */
+  var LINK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>';
+  var links = [];
+  heads.forEach(function(h){
+    if(!h.id) return;
+    var label = h.textContent.replace(/\s+/g,' ').trim();
+    h.setAttribute('data-label', label);
+
+    var a = document.createElement('a');
+    a.href = '#' + h.id;
+    a.className = h.tagName === 'H2' ? 'major' : 'minor';
+    a.textContent = label;
+    a.setAttribute('data-search', label.toLowerCase());
+    a.setAttribute('data-id', h.id);
+    toc.appendChild(a);
+    links.push(a);
+
+    var btn = document.createElement('button');
+    btn.className = 'anchor';
+    btn.type = 'button';
+    btn.title = 'Copy link to this section';
+    btn.setAttribute('aria-label', 'Copy link to ' + label);
+    btn.innerHTML = LINK_SVG;
+    btn.addEventListener('click', function(e){
+      e.preventDefault(); e.stopPropagation();
+      var url = location.href.split('#')[0] + '#' + h.id;
+      history.replaceState(null, '', '#' + h.id);
+      function fallback(){
+        var t = document.createElement('textarea');
+        t.value = url; t.style.position = 'fixed'; t.style.opacity = '0';
+        document.body.appendChild(t); t.select();
+        try { document.execCommand('copy'); say('Link copied'); }
+        catch(err){ say('Copy failed — use the address bar'); }
+        document.body.removeChild(t);
+      }
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(url).then(function(){ say('Link copied'); }, fallback);
+      } else { fallback(); }
+    });
+    h.appendChild(btn);
+  });
+
+  var noRes = document.createElement('div');
+  noRes.className = 'no-results';
+  noRes.textContent = 'No sections match that.';
+  toc.appendChild(noRes);
+
+  document.getElementById('n-major').textContent = content.querySelectorAll('h2').length;
+  document.getElementById('n-minor').textContent = content.querySelectorAll('h3').length;
+  document.getElementById('c-total').textContent = links.length + ' sections';
+
+  /* ---------- search ---------- */
+  function esc(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+  function runSearch(){
+    var q = search.value.trim().toLowerCase();
+    var shown = 0;
+    if(!q){
+      links.forEach(function(a){
+        a.style.display = '';
+        a.textContent = a.getAttribute('data-label-text');
+      });
+      noRes.style.display = 'none';
+      document.getElementById('c-total').textContent = links.length + ' sections';
+      return;
+    }
+    var re = new RegExp('(' + esc(q) + ')', 'ig');
+    links.forEach(function(a){
+      var label = a.getAttribute('data-label-text');
+      if(a.getAttribute('data-search').indexOf(q) !== -1){
+        a.style.display = '';
+        a.innerHTML = label.replace(re, '<mark>$1</mark>');
+        shown++;
+      } else {
+        a.style.display = 'none';
+      }
+    });
+    noRes.style.display = shown ? 'none' : 'block';
+    document.getElementById('c-total').textContent = shown + ' of ' + links.length;
+  }
+  links.forEach(function(a){ a.setAttribute('data-label-text', a.textContent); });
+  search.addEventListener('input', runSearch);
+  search.addEventListener('keydown', function(e){
+    if(e.key === 'Escape'){ search.value = ''; runSearch(); search.blur(); }
+    if(e.key === 'Enter'){
+      var first = links.filter(function(a){ return a.style.display !== 'none'; })[0];
+      if(first){ first.click(); search.blur(); }
+    }
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.key === '/' && document.activeElement !== search){ e.preventDefault(); search.focus(); search.select(); }
+  });
+
+  /* ---------- scroll-spy ---------- */
+  var byId = {}; links.forEach(function(a){ byId[a.getAttribute('data-id')] = a; });
+  var current = null;
+  function setActive(id){
+    if(id === current) return;
+    current = id;
+    links.forEach(function(a){ a.classList.remove('active'); });
+    var a = byId[id];
+    if(!a) return;
+    a.classList.add('active');
+    if(!search.value){
+      var r = a.getBoundingClientRect(), t = toc.getBoundingClientRect();
+      if(r.top < t.top + 40 || r.bottom > t.bottom - 40){
+        toc.scrollTop += r.top - t.top - t.height / 2;
+      }
+    }
+    var h = document.getElementById(id);
+    if(h){
+      if(h.tagName === 'H3'){
+        var sec = h; while(sec && sec.tagName !== 'H2'){ sec = sec.previousElementSibling; }
+        crumb.innerHTML = sec ? '<b>' + sec.getAttribute('data-label') + '</b> / ' + h.getAttribute('data-label')
+                              : '<b>' + h.getAttribute('data-label') + '</b>';
+      } else {
+        crumb.innerHTML = '<b>' + h.getAttribute('data-label') + '</b>';
+      }
+    }
+  }
+  function onScroll(){
+    var best = null, y = 96;
+    for(var i = 0; i < heads.length; i++){
+      var top = heads[i].getBoundingClientRect().top;
+      if(top <= y) best = heads[i]; else break;
+    }
+    setActive(best ? best.id : null);
+    if(!best) crumb.innerHTML = '<b>Overview</b>';
+
+    var max = document.documentElement.scrollHeight - window.innerHeight;
+    var pct = max > 0 ? (window.scrollY / max) * 100 : 0;
+    document.getElementById('progress').style.width = pct + '%';
+    document.getElementById('totop').classList.toggle('show', window.scrollY > 700);
+  }
+  var ticking = false;
+  window.addEventListener('scroll', function(){
+    if(!ticking){ ticking = true; requestAnimationFrame(function(){ onScroll(); ticking = false; }); }
+  }, {passive:true});
+
+  /* ---------- mobile drawer ---------- */
+  var sidebar = document.getElementById('sidebar'), scrim = document.getElementById('scrim');
+  function closeNav(){ sidebar.classList.remove('open'); scrim.classList.remove('show'); }
+  document.getElementById('menu-btn').addEventListener('click', function(){
+    sidebar.classList.toggle('open'); scrim.classList.toggle('show');
+  });
+  scrim.addEventListener('click', closeNav);
+  toc.addEventListener('click', function(e){ if(e.target.tagName === 'A' && window.innerWidth <= 960) closeNav(); });
+
+  document.getElementById('totop').addEventListener('click', function(){
+    window.scrollTo({top:0, behavior:'smooth'});
+  });
+
+  /* ---- tools overlay ----
+     To add another tool, append one line to TOOLS. Nothing else needs editing:
+     the tab, its pane and its shortcut number are all generated from this list.
+     The site must allow embedding (no X-Frame-Options / CSP frame-ancestors). */
+  (function(){
+    var TOOLS = [
+      { id:'calc',   label:'Damage Calc', url:'calc.html',
+        openUrl:'https://dekzeh.github.io/calc/' },
+      { id:'dex',    label:'RB Dex',      url:'dex.html',
+        openUrl:'https://may8th1995.github.io/RBDex/' },
+      { id:'sheet',  label:'Trainer Battles',
+        url:'https://docs.google.com/spreadsheets/d/1Ezdd8k-pDlVocd0NHUkGwZXcegfG-KTOraM_uZUsr6s/edit?rm=minimal&gid=665425777#gid=665425777',
+        openUrl:'https://docs.google.com/spreadsheets/d/1Ezdd8k-pDlVocd0NHUkGwZXcegfG-KTOraM_uZUsr6s/edit?gid=665425777#gid=665425777' }
+    ];
+
+    /* Screen filters. A cross-origin iframe cannot be restyled from here,
+       but a CSS filter applies to the rendered frame itself, which works
+       on any embedded site. Per-tool, remembered, and purely local — it
+       changes nothing on the embedded page for anyone else. */
+    var FILTERS = [
+      { n:'Normal', v:'' },
+      { n:'Dim',    v:'brightness(.82) contrast(1.04)' }
+    ];
+
+    /* Per-panel zoom. Applied with CSS zoom on the iframe element, which
+       reflows the embedded page the way browser zoom does rather than just
+       scaling a bitmap. Stored per tool, so each tab keeps its own level. */
+    var ZOOMS = [75, 90, 100, 110, 125, 150];
+    var ZOOM_DEFAULT = 2;   // index of 100%
+
+    var overlay  = document.getElementById('tools-overlay');
+    var openBtn  = document.getElementById('tools-btn');
+    var closeBtn = document.getElementById('tools-close');
+    var tabsEl   = document.getElementById('tools-tabs');
+    var panesEl  = document.getElementById('tools-panes');
+    var newTab   = document.getElementById('tools-newtab');
+    var filterBtn= document.getElementById('tools-filter');
+    var zoomBtn  = document.getElementById('tools-zoom');
+    var picker   = document.getElementById('tools-picker');
+
+    try { var saved = localStorage.getItem('rnbai-tool');
+          if(saved !== null && TOOLS[+saved]) current = +saved; } catch(e){}
+
+    // Build the tab strip up front; panes are built on first visit.
+    TOOLS.forEach(function(tool, i){
+      var tab = document.createElement('button');
+      tab.type = 'button';
+      tab.className = 'tool-tab';
+      tab.setAttribute('role','tab');
+      tab.setAttribute('aria-selected','false');
+      tab.title = tool.label + ' (' + (i+1) + ')';
+      tab.innerHTML = '<span class="tool-num">' + (i+1) + '</span>' + tool.label;
+      tab.addEventListener('click', function(){ select(i); });
+      tabsEl.appendChild(tab);
+      tool.tabEl = tab;
+    });
+
+    function ensurePane(i){
+      var tool = TOOLS[i];
+      if(tool.paneEl) return tool.paneEl;
+      var pane = document.createElement('div');
+      pane.className = 'tool-pane';
+      var load = document.createElement('div');
+      load.className = 'tool-loading';
+      load.textContent = 'loading ' + tool.label.toLowerCase() + '…';
+      pane.appendChild(load);
+      var frame = document.createElement('iframe');
+      frame.title = tool.label;
+      frame.addEventListener('load', function(){ pane.classList.add('ready'); });
+      frame.src = tool.url;
+      pane.appendChild(frame);
+      panesEl.appendChild(pane);
+      tool.paneEl = pane;
+      return pane;
+    }
+
+    // Switching only toggles visibility — panes are never removed or reparented,
+    // so each tool keeps its state for the life of the page.
+    function select(i){
+      current = i;
+      ensurePane(i);
+      TOOLS.forEach(function(tool, j){
+        var on = (i === j);
+        tool.tabEl.setAttribute('aria-selected', on ? 'true' : 'false');
+        if(tool.paneEl) tool.paneEl.classList.toggle('active', on);
+      });
+      newTab.href = TOOLS[i].openUrl || TOOLS[i].url;
+      try { localStorage.setItem('rnbai-tool', String(i)); } catch(e){}
+      paintFilter();
+      paintZoom();
+    }
+
+    function filterKey(i){ return 'rnbai-filter-' + TOOLS[i].id; }
+
+    function paintFilter(){
+      var tool = TOOLS[current], idx = 0;
+      try { var v = localStorage.getItem(filterKey(current));
+            if(v !== null && FILTERS[+v]) idx = +v; } catch(e){}
+      tool.filterIdx = idx;
+      if(tool.paneEl){
+        var fr = tool.paneEl.querySelector('iframe');
+        if(fr) fr.style.filter = FILTERS[idx].v;
+      }
+      filterBtn.textContent = 'Screen: ' + FILTERS[idx].n;
+    }
+
+    function cycleFilter(){
+      var tool = TOOLS[current];
+      var idx = ((tool.filterIdx || 0) + 1) % FILTERS.length;
+      try { localStorage.setItem(filterKey(current), String(idx)); } catch(e){}
+      paintFilter();
+    }
+
+    function zoomKey(i){ return 'rnbai-zoom-' + TOOLS[i].id; }
+
+    function paintZoom(){
+      var tool = TOOLS[current], idx = ZOOM_DEFAULT;
+      try { var v = localStorage.getItem(zoomKey(current));
+            if(v !== null && ZOOMS[+v]) idx = +v; } catch(e){}
+      tool.zoomIdx = idx;
+      if(tool.paneEl){
+        var fr = tool.paneEl.querySelector('iframe');
+        if(fr) fr.style.zoom = ZOOMS[idx] + '%';
+      }
+      zoomBtn.textContent = 'Zoom: ' + ZOOMS[idx] + '%';
+    }
+
+    function setZoom(idx){
+      idx = Math.max(0, Math.min(ZOOMS.length - 1, idx));
+      try { localStorage.setItem(zoomKey(current), String(idx)); } catch(e){}
+      paintZoom();
+    }
+    function stepZoom(dir){ setZoom((TOOLS[current].zoomIdx == null ? ZOOM_DEFAULT : TOOLS[current].zoomIdx) + dir); }
+    function cycleZoom(){
+      var idx = (TOOLS[current].zoomIdx == null ? ZOOM_DEFAULT : TOOLS[current].zoomIdx);
+      setZoom((idx + 1) % ZOOMS.length);
+    }
+
+    /* Remember whether the overlay was open, so a refresh keeps you on the
+       tool you were using instead of dropping you back on the doc. The tool
+       index itself is already stored as rnbai-tool. */
+    function rememberOpen(v){
+      try { localStorage.setItem('rnbai-tools-open', v ? '1' : '0'); } catch(e){}
+    }
+    function openTools(idx, restoring){
+      closePicker();
+      select(typeof idx === 'number' ? idx : current);
+      overlay.classList.add('open');
+      document.body.classList.add('tools-open');
+      // On a restore we must not steal focus from the page on load.
+      if(!restoring) closeBtn.focus();
+      rememberOpen(true);
+    }
+    function closeTools(){
+      overlay.classList.remove('open');
+      document.body.classList.remove('tools-open');
+      openBtn.focus();
+      rememberOpen(false);
+    }
+    function isOpen(){ return overlay.classList.contains('open'); }
+
+    // Build the "which tab?" menu once.
+    picker.innerHTML = '<div class="pick-head">Open which tab?</div>';
+    TOOLS.forEach(function(tool, i){
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'pick-opt'; b.setAttribute('role','menuitem');
+      b.innerHTML = '<span class="pick-num">' + (i+1) + '</span>' + tool.label;
+      b.addEventListener('click', function(e){ e.stopPropagation(); openTools(i); });
+      picker.appendChild(b);
+    });
+
+    function openPicker(){ picker.classList.add('open'); }
+    function closePicker(){ picker.classList.remove('open'); }
+    function pickerOpen(){ return picker.classList.contains('open'); }
+
+    openBtn.addEventListener('click', function(e){
+      e.stopPropagation();
+      pickerOpen() ? closePicker() : openPicker();
+    });
+    document.addEventListener('click', function(e){
+      if(!picker.contains(e.target) && e.target !== openBtn) closePicker();
+    });
+    closeBtn.addEventListener('click', closeTools);
+    filterBtn.addEventListener('click', cycleFilter);
+    zoomBtn.addEventListener('click', cycleZoom);
+
+    /* Restore the overlay if it was open when the page was last left. */
+    try {
+      if(localStorage.getItem('rnbai-tools-open') === '1') openTools(current, true);
+    } catch(e){}
+
+    document.addEventListener('keydown', function(e){
+      if(e.metaKey || e.ctrlKey || e.altKey) return;           // leave copy etc. alone
+      var t = e.target, tag = t && t.tagName;
+      if(tag === 'INPUT' || tag === 'TEXTAREA' || (t && t.isContentEditable)) return;
+
+      if(e.key === 'Escape'){
+        if(isOpen()){ closeTools(); return; }
+        if(pickerOpen()){ closePicker(); return; }
+      }
+
+      if(e.key >= '1' && e.key <= String(Math.min(9, TOOLS.length))){
+        if(isOpen()){ e.preventDefault(); select(+e.key - 1); return; }
+        if(pickerOpen()){ e.preventDefault(); openTools(+e.key - 1); return; }
+      }
+      if(isOpen() && (e.key === 'f' || e.key === 'F')){
+        e.preventDefault(); cycleFilter(); return;
+      }
+      if(isOpen() && (e.key === 'z' || e.key === 'Z')){
+        e.preventDefault(); cycleZoom(); return;
+      }
+      if(isOpen() && (e.key === '+' || e.key === '=')){
+        e.preventDefault(); stepZoom(1); return;
+      }
+      if(isOpen() && (e.key === '-' || e.key === '_')){
+        e.preventDefault(); stepZoom(-1); return;
+      }
+      if(e.key === 'c' || e.key === 'C'){
+        e.preventDefault();
+        if(isOpen()) closeTools();
+        else pickerOpen() ? closePicker() : openPicker();
+      }
+    });
+  })();
+
+  /* ---------- readability pass ----------
+     Purely presentational: entries get grouped into cards, run-in labels
+     get styled, and a score filter is added. No text is rewritten - the
+     only DOM writes are wrapping existing nodes and splitting a leading
+     "Label:" out of a bullet into a <b>. */
+  (function(){
+    /* 1. group each h3 with the nodes that follow it, up to the next heading */
+    var kids = Array.prototype.slice.call(content.children);
+    kids.forEach(function(node){
+      if(node.tagName !== 'H3') return;
+      var box = document.createElement('div');
+      box.className = 'entry';
+      node.parentNode.insertBefore(box, node);
+      var n = node;
+      while(n && !/^H[12]$/.test(n.tagName)){
+        var next = n.nextElementSibling;
+        box.appendChild(n);
+        n = next;
+        if(n && n.tagName === 'H3') break;
+      }
+    });
+
+    /* 2. pull a leading "Blocked:" / "Viability:" out into a styled label */
+    var LABELS = /^(Blocked|Viability|Doubles|Blocked unless|Effect|Notes?|Score)\s*:/;
+    content.querySelectorAll('.entry li').forEach(function(li){
+      var first = li.firstChild;
+      if(!first || first.nodeType !== 3) return;
+      var m = first.nodeValue.match(LABELS);
+      if(!m) return;
+      var b = document.createElement('b');
+      b.className = 'lbl ' + (/^Blocked/.test(m[1]) ? 'lbl-block'
+                            : /^Viability/.test(m[1]) ? 'lbl-via' : '');
+      b.textContent = m[1];
+      first.nodeValue = first.nodeValue.slice(m[0].length);
+      li.insertBefore(b, first);
+    });
+
+  })();
+
+  onScroll();
+  if(location.hash){
+    var target = document.getElementById(location.hash.slice(1));
+    if(target) setTimeout(function(){ target.scrollIntoView(); }, 60);
+  }
+})();
+
+</script>
+</body>
+</html>

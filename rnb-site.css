@@ -1,0 +1,151 @@
+/* =====================================================================
+   Run and Bun — shared site theme + cross-link bar
+   Palette: light / dark / night, applied across the AI doc, trainer
+   sheet, dex and calc so the four pages read as one site.
+   ===================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');
+
+html[data-theme="light"], html[data-theme="parchment"]{
+  --bg:#F6F3EA; --bg-2:#FBF9F2; --panel:#FFFFFF; --panel-2:#FBF9F2;
+  --ink:#24303A; --ink-2:#6B7480; --ink-3:#97A0AA;
+  --border:#E1DAC6; --border-2:#D2C8AE;
+  --accent:#E0483E; --accent-2:#3F8F6B; --accent-soft:rgba(224,72,62,.09);
+  --pos-bg:rgba(63,143,107,.12); --pos-fg:#2F6B35; --pos-bd:rgba(63,143,107,.35);
+  --neg-bg:rgba(224,72,62,.10);  --neg-fg:#B23A2E; --neg-bd:rgba(224,72,62,.30);
+  --zero-bg:rgba(107,116,128,.10); --zero-fg:#6B7480; --zero-bd:rgba(107,116,128,.25);
+  --code-bg:#F1EDE1; --code-fg:#3A4550;
+  --shadow:0 2px 10px rgba(36,48,58,.08);
+  --glow:radial-gradient(1100px 380px at 14% -10%, rgba(224,72,62,.05), transparent 70%);
+  --sprite-bg:#FFFFFF;
+  color-scheme:light;
+}
+html[data-theme="dark"], html[data-theme="astral"]{
+  --bg:#14171C; --bg-2:#181C22; --panel:#1C2027; --panel-2:#20242C;
+  --ink:#E7E9EC; --ink-2:#8A909B; --ink-3:#666D78;
+  --border:#2B303A; --border-2:#3A404C;
+  --accent:#F2C744; --accent-2:#4FD1C5; --accent-soft:rgba(242,199,68,.10);
+  --pos-bg:rgba(95,208,138,.13); --pos-fg:#5FD08A; --pos-bd:rgba(95,208,138,.32);
+  --neg-bg:rgba(242,114,106,.13); --neg-fg:#F2726A; --neg-bd:rgba(242,114,106,.32);
+  --zero-bg:rgba(138,144,155,.12); --zero-fg:#8A909B; --zero-bd:rgba(138,144,155,.28);
+  --code-bg:#1F242C; --code-fg:#C6CCD6;
+  --shadow:0 2px 14px rgba(0,0,0,.4);
+  --glow:radial-gradient(1100px 380px at 14% -10%, rgba(242,199,68,.05), transparent 70%);
+  --sprite-bg:#F2F4F8;
+  color-scheme:dark;
+}
+html[data-theme="night"]{
+  --bg:#0A1322; --bg-2:#0D1829; --panel:#101E36; --panel-2:#132340;
+  --ink:#DCE8F5; --ink-2:#7C93B3; --ink-3:#5C728F;
+  --border:#1D3155; --border-2:#2A4468;
+  --accent:#4DD4E8; --accent-2:#9B8CF2; --accent-soft:rgba(77,212,232,.10);
+  --pos-bg:rgba(111,227,176,.13); --pos-fg:#6FE3B0; --pos-bd:rgba(111,227,176,.32);
+  --neg-bg:rgba(255,138,138,.13); --neg-fg:#FF8A8A; --neg-bd:rgba(255,138,138,.32);
+  --zero-bg:rgba(124,147,179,.12); --zero-fg:#7C93B3; --zero-bd:rgba(124,147,179,.28);
+  --code-bg:#122443; --code-fg:#C2D6EC;
+  --shadow:0 2px 16px rgba(0,0,0,.5);
+  --glow:radial-gradient(1100px 380px at 14% -10%, rgba(77,212,232,.06), transparent 70%);
+  --sprite-bg:#E8F0F8;
+  color-scheme:dark;
+}
+
+/* ---------------------------------------------- shared cross-link bar */
+#rnb-bar{
+  position:sticky; top:0; z-index:500;
+  display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  padding:9px 16px;
+  background:var(--panel); border-bottom:1px solid var(--border);
+  font-family:'IBM Plex Mono', ui-monospace, Menlo, monospace;
+}
+#rnb-bar .rnb-brand{
+  font-family:'Press Start 2P', monospace; font-size:10px; line-height:1.5;
+  letter-spacing:.5px; color:var(--accent); text-decoration:none; white-space:nowrap;
+}
+#rnb-bar nav{ display:flex; gap:3px; flex-wrap:wrap; }
+#rnb-bar nav a{
+  display:inline-block; padding:5px 10px; border-radius:6px;
+  font-size:11.5px; font-weight:500; letter-spacing:.3px;
+  color:var(--ink-2); text-decoration:none; border:1px solid transparent;
+  white-space:nowrap;
+}
+#rnb-bar nav a:hover{ background:var(--panel-2); color:var(--ink); }
+#rnb-bar nav a.rnb-current{
+  color:var(--accent); background:var(--accent-soft); border-color:var(--accent);
+  font-weight:600;
+}
+#rnb-bar .rnb-themes{ display:flex; gap:4px; margin-left:auto; }
+#rnb-bar .rnb-themes button{
+  padding:5px 8px; font-family:inherit; font-size:9px; font-weight:600; letter-spacing:.5px;
+  border:1px solid var(--border); background:var(--panel-2); color:var(--ink-3);
+  border-radius:6px; cursor:pointer;
+}
+#rnb-bar .rnb-themes button:hover{ color:var(--ink); border-color:var(--ink-3); }
+#rnb-bar .rnb-themes button.on{ background:var(--accent); border-color:var(--accent); color:var(--bg); }
+@media (max-width:640px){
+  #rnb-bar{ gap:8px; padding:8px 12px; }
+  #rnb-bar .rnb-themes{ margin-left:0; width:100%; }
+}
+
+/* the calc mirror hides every <nav> for embedding — ours must survive that */
+#rnb-bar, #rnb-bar nav, #rnb-bar .rnb-themes{ display:flex !important; }
+#rnb-bar nav a{ display:inline-block !important; }
+
+/* ---------------------------------------------- AI doc (index.html) */
+html body{ background:var(--bg); color:var(--ink); }
+#layout{ }
+/* the doc's own sticky chrome has to sit under the shared bar */
+#sidebar{ top:var(--rnb-bar-h,44px) !important; height:calc(100vh - var(--rnb-bar-h,44px)) !important; }
+#topbar{ top:var(--rnb-bar-h,44px) !important; }
+#progress{ top:0 !important; z-index:600 !important; }
+#content h2, #content h3, .eyebrow{ color:var(--accent) !important; }
+#content h2{
+  font-family:'IBM Plex Mono', monospace; color:var(--ink) !important;
+  background:linear-gradient(90deg,var(--accent-soft),transparent 85%);
+  border:1px solid var(--border); border-left:3px solid var(--accent);
+}
+#content h3{ color:var(--accent) !important; border-bottom:1px dashed var(--border-2); }
+.hero h1{
+  font-family:'Press Start 2P', monospace !important;
+  font-size:clamp(15px,2.2vw,22px) !important; line-height:1.7 !important;
+  letter-spacing:0 !important;
+  background:none !important; -webkit-text-fill-color:var(--ink); color:var(--ink) !important;
+}
+.brand-name{ font-family:'Press Start 2P', monospace !important; font-size:10px !important; }
+.stat b{ color:var(--accent); }
+.entry{ background:var(--panel); border-color:var(--border); }
+.entry:hover{ border-color:var(--accent); }
+.lbl{ color:var(--accent); }
+.lbl-block{ color:var(--neg-fg); }
+.lbl-via{ color:var(--pos-fg); }
+
+/* ---------------------------------------------- trainer sheet (trainers.html) */
+body > header{
+  top:var(--rnb-bar-h,44px) !important;
+  background:var(--panel) !important; border-bottom:1px solid var(--border) !important;
+}
+body > header h1{ font-family:'Press Start 2P', monospace; font-size:10px !important; color:var(--accent); }
+.tab{ color:var(--ink-2) !important; }
+.tab:hover{ background:var(--panel-2) !important; color:var(--ink) !important; }
+.tab[aria-selected="true"]{
+  background:var(--accent-soft) !important; border-color:var(--accent) !important; color:var(--accent) !important;
+}
+.area{
+  background:var(--panel-2) !important; border:1px solid var(--border) !important;
+  color:var(--accent-2) !important;
+}
+.trainer{ border:1px solid var(--border) !important; }
+.tname{ background:var(--panel-2) !important; color:var(--accent) !important; }
+table th{
+  background:var(--panel-2) !important; color:var(--accent) !important;
+  border:1px solid var(--border) !important;
+}
+table td{
+  background:var(--panel) !important; color:var(--ink) !important;
+  border:1px solid var(--border) !important;
+}
+td.sp{ background:var(--sprite-bg) !important; }
+td.name{ background:var(--panel-2) !important; font-weight:700; }
+.moves td{ color:var(--ink-2) !important; }
+.count{ color:var(--ink-3) !important; }
+
+/* ---------------------------------------------- dex + calc (remote mirrors) */
+body.rnb-mirror{ background:var(--bg) !important; }
