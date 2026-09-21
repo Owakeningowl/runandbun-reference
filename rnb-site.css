@@ -117,35 +117,8 @@ html body{ background:var(--bg); color:var(--ink); }
 .lbl-block{ color:var(--neg-fg); }
 .lbl-via{ color:var(--pos-fg); }
 
-/* ---------------------------------------------- trainer sheet (trainers.html) */
-body > header{
-  top:var(--rnb-bar-h,44px) !important;
-  background:var(--panel) !important; border-bottom:1px solid var(--border) !important;
-}
-body > header h1{ font-family:'Press Start 2P', monospace; font-size:10px !important; color:var(--accent); }
-.tab{ color:var(--ink-2) !important; }
-.tab:hover{ background:var(--panel-2) !important; color:var(--ink) !important; }
-.tab[aria-selected="true"]{
-  background:var(--accent-soft) !important; border-color:var(--accent) !important; color:var(--accent) !important;
-}
-.area{
-  background:var(--panel-2) !important; border:1px solid var(--border) !important;
-  color:var(--accent-2) !important;
-}
-.trainer{ border:1px solid var(--border) !important; }
-.tname{ background:var(--panel-2) !important; color:var(--accent) !important; }
-table th{
-  background:var(--panel-2) !important; color:var(--accent) !important;
-  border:1px solid var(--border) !important;
-}
-table td{
-  background:var(--panel) !important; color:var(--ink) !important;
-  border:1px solid var(--border) !important;
-}
-td.sp{ background:var(--sprite-bg) !important; }
-td.name{ background:var(--panel-2) !important; font-weight:700; }
-.moves td{ color:var(--ink-2) !important; }
-.count{ color:var(--ink-3) !important; }
+/* ---------------------------------------------- trainer sheet (trainers.html)
+   trainers.html is now its own page built on these tokens — no overrides needed. */
 
 /* ---------------------------------------------- dex + calc (remote mirrors) */
 body.rnb-mirror{ background:var(--bg) !important; }
