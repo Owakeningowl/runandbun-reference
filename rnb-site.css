@@ -80,6 +80,9 @@ html[data-theme="night"]{
 }
 #rnb-bar .rnb-themes button:hover{ color:var(--ink); border-color:var(--ink-3); }
 #rnb-bar .rnb-themes button.on{ background:var(--accent); border-color:var(--accent); color:var(--bg); }
+/* the AI doc's Tools overlay brings its own bar */
+body.tools-open #rnb-bar{ display:none !important; }
+
 @media (max-width:640px){
   #rnb-bar{ gap:8px; padding:8px 12px; }
   #rnb-bar .rnb-themes{ margin-left:0; width:100%; }
