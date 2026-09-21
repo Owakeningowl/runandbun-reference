@@ -1,38 +1,163 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dex — Run and Bun</title>
-<link rel="stylesheet" href="rnb-site.css">
-<style>
-html,body{ height:100%; }
-body{ margin:0; display:flex; flex-direction:column; background:var(--bg); color:var(--ink);
-  font-family:'IBM Plex Mono', ui-monospace, Menlo, monospace; }
-#rnb-bar{ flex:0 0 auto; position:static; }
-#frame-note{ flex:0 0 auto; display:flex; align-items:center; gap:10px; flex-wrap:wrap;
-  padding:7px 16px; font-size:10.5px; color:var(--ink-3);
-  background:var(--panel-2); border-bottom:1px solid var(--border); }
-#frame-note a{ color:var(--accent); text-decoration:none; font-weight:600; }
-#frame-note a:hover{ text-decoration:underline; }
-#frame-wrap{ flex:1 1 auto; min-height:0; position:relative; }
-#frame-wrap iframe{ width:100%; height:100%; border:0; display:block; background:#fff; }
-#frame-fallback{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-  padding:30px; text-align:center; font-size:12px; line-height:1.8; color:var(--ink-2);
-  background:var(--bg); pointer-events:none; opacity:1; transition:opacity .2s; }
-#frame-wrap.loaded #frame-fallback{ opacity:0; }
+<html><head>
+<base href="https://may8th1995.github.io/RBDex/">
+
+
+	<meta charset="utf-8" />
+
+	<title>Pok&eacute;dex - Pok&eacute;mon Showdown</title>
+
+	<meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=IE8" />
+	<link rel="stylesheet" href="https://play.pokemonshowdown.com/style/font-awesome.css" />
+	<link rel="stylesheet" href="https://may8th1995.github.io/RBDex/theme/panels.css?b1" />
+	<link rel="stylesheet" href="https://may8th1995.github.io/RBDex/theme/main.css?b1" />
+	<meta name="viewport" content="width=device-width,initial-scale=1">
+	<link rel="stylesheet" href="https://play.pokemonshowdown.com/style/utilichart.css?b359" />
+	<link rel="stylesheet" href="https://may8th1995.github.io/RBDex/theme/pokedex.css?b359" />
+
+	<!-- Workarounds for IE bugs to display trees correctly. -->
+	<!--[if lte IE 6]><style> li.tree { height: 1px; } </style><![endif]-->
+	<!--[if IE 7]><style> li.tree { zoom: 1; } </style><![endif]-->
+
+<style id="astral-injected">
+/* ============================================================
+   Astral theme for the Run and Bun Pokedex (Showdown pokedex).
+   The damage calc and the dex are different apps with different
+   stylesheets, so this targets the pokedex's own classes.
+   ============================================================ */
+:root{
+  --a-bg:#15181f; --a-panel:#1c2028; --a-panel-2:#20242e;
+  --a-line:#2b3140; --a-ink:#d1d5de; --a-ink-2:#98a0b0; --a-ink-3:#6b7383;
+  --a-accent:#3a4462; --a-accent-2:#485480;
+}
+html, body{ background:var(--a-bg) !important; color:var(--a-ink) !important; }
+
+/* top nav (Pokedex / Calc / Play) — hidden inside the embed */
+.pfx-topbar{ display:none !important; }
+body{ padding-top:0 !important; }
+
+/* panels */
+.pfx-panel, .pfx-body, .ps-popup, .pfx-panel .pad{
+  background:var(--a-bg) !important; color:var(--a-ink) !important;
+}
+.pfx-panel{ border-color:var(--a-line) !important; }
+
+h1,h2,h3,h4,.pfx-panel h1{ color:var(--a-ink) !important; }
+a{ color:#8fb0e0 !important; }
+a:hover{ color:#b6cdf0 !important; }
+p, li, td, th, label, span{ color:inherit; }
+hr{ border-color:var(--a-line) !important; }
+
+/* search box */
+input[type=text], input[type=search], input.textbox, textarea, select{
+  background:var(--a-panel) !important; color:var(--a-ink) !important;
+  border:1px solid var(--a-line) !important; border-radius:6px !important;
+}
+input::placeholder{ color:var(--a-ink-3) !important; }
+input:focus, select:focus{ border-color:var(--a-accent-2) !important; outline:none !important; }
+
+/* the tab strip (Search / Pokemon / Locations / Moves) */
+.search-tabs, .tabbar, .buttonbar{ background:transparent !important; }
+button, .button, .tabbar button{
+  background:var(--a-panel) !important; color:var(--a-ink-2) !important;
+  border:1px solid var(--a-line) !important; border-radius:6px !important;
+}
+button:hover, .button:hover{ background:var(--a-panel-2) !important; color:var(--a-ink) !important; }
+button.cur, .button.cur, button[aria-selected="true"]{
+  background:var(--a-accent) !important; color:#fff !important;
+  border-color:var(--a-accent-2) !important;
+}
+
+/* result rows (utilichart) */
+.utilichart, .utilichart li, .resultheader, .result{
+  background:var(--a-bg) !important; color:var(--a-ink) !important;
+}
+.utilichart a, .utilichart li a{
+  background:var(--a-panel) !important; color:var(--a-ink) !important;
+  border-color:var(--a-line) !important;
+}
+.utilichart a:hover{ background:var(--a-panel-2) !important; }
+.utilichart .col, .utilichart .colv, .utilichart .numcol{ color:var(--a-ink-2) !important; }
+.utilichart .pokemonnamecol, .utilichart .movenamecol{ color:var(--a-ink) !important; font-weight:600; }
+.resultheader h3, .utilichart h3{
+  background:var(--a-panel-2) !important; color:var(--a-ink-2) !important;
+  border-color:var(--a-line) !important;
+}
+.statbar, .barbg{ background:var(--a-panel-2) !important; }
+
+/* tables */
+table, .dexentry table{ background:var(--a-bg) !important; }
+th{ background:var(--a-panel-2) !important; color:var(--a-ink-2) !important;
+    border-color:var(--a-line) !important; }
+td{ border-color:var(--a-line) !important; }
+tr:nth-child(even) td{ background:var(--a-panel) !important; }
+
+/* keep type/category icons legible on dark */
+img[src*="types"], img[src*="categories"]{ filter:none !important; }
+
 </style>
-</head>
-<body>
-<div id="frame-note">
-  <span>Live embed of may8th1995's RBDex — always the current version.</span>
-  <a href="https://may8th1995.github.io/RBDex/" target="_blank" rel="noopener">Open it in its own tab ↗</a>
+<link rel="stylesheet" href="https://owakeningowl.github.io/runandbun-reference/rnb-site.css">
+<script src="https://owakeningowl.github.io/runandbun-reference/rnb-site.js" defer></script>
+
+</head><body>
+<div id="rnb-bar">
+  <a class="rnb-brand" href="https://owakeningowl.github.io/runandbun-reference/index.html">RUN AND BUN</a>
+  <nav>
+    <a href="https://owakeningowl.github.io/runandbun-reference/index.html">AI Reference</a>
+    <a href="https://owakeningowl.github.io/runandbun-reference/trainers.html">Trainers</a>
+    <a href="https://owakeningowl.github.io/runandbun-reference/dex.html" class="rnb-current">Dex</a>
+    <a href="https://owakeningowl.github.io/runandbun-reference/calc.html">Calc</a>
+  </nav>
+  <div class="rnb-themes">
+    <button type="button" data-t="light">LIGHT</button>
+    <button type="button" data-t="dark">DARK</button>
+    <button type="button" data-t="night">NIGHT</button>
+  </div>
 </div>
-<div id="frame-wrap">
-  <div id="frame-fallback">Loading Dex…<br>If it stays blank, open it in its own tab with the link above.</div>
-  <iframe src="https://may8th1995.github.io/RBDex/" title="Dex" loading="eager"
-          onload="this.parentNode.classList.add('loaded')"></iframe>
-</div>
-<script src="rnb-site.js" defer></script>
-</body>
-</html>
+
+	<div class="pfx-topbar">
+		<div class="header">
+			<ul class="nav">
+				<li><a class="button nav-first button cur" href="https://may8th1995.github.io/RBDex/">Pok&eacute;dex</a></li>
+				<li><a class="button nav-last" href="//calc.runandbun.com">Calc</a></li>
+			</ul>
+			<ul class="nav nav-play">
+				<li><a class="button greenbutton nav-first nav-last" href="http://play.pokemonshowdown.com/">Play</a></li>
+			</ul>
+			<div style="clear:both"></div>
+		</div>
+	</div>
+	<div class="pfx-panel"><div class="pfx-body">
+		<noscript><p>
+			<strong>Requires JavaScript!</strong>
+		</p></noscript>
+		<p>
+			Loading...
+		</p>
+	</div></div>
+	<script src="https://may8th1995.github.io/RBDex/js/lib/jquery-1.12.4.min.js"></script>
+	<script src="https://may8th1995.github.io/RBDex/js/lib/lodash.min.js"></script>
+	<script src="https://may8th1995.github.io/RBDex/js/lib/backbone-min.js"></script>
+	<script src="https://may8th1995.github.io/RBDex/js/panels.js"></script>
+
+	<script src="https://play.pokemonshowdown.com/config/config.js?v0.9xy31"></script>
+	<script src="https://may8th1995.github.io/RBDex/battledata.js"></script>
+	<script src="https://may8th1995.github.io/RBDex/search-index.js"></script>
+	<script src="https://may8th1995.github.io/RBDex/pokedex.js"></script>
+	<script src="https://may8th1995.github.io/RBDex/teambuilder-tables.js"></script>
+	<script src="https://may8th1995.github.io/RBDex/learnsets.js"></script>
+	<script src="https://may8th1995.github.io/RBDex/moves.js"></script>
+	<script src="https://may8th1995.github.io/RBDex/locations.js"></script>
+	<script src="https://play.pokemonshowdown.com/data/abilities.js?v0.9xy31"></script>
+	<script src="https://may8th1995.github.io/RBDex/items.js"></script>
+	<script src="https://play.pokemonshowdown.com/data/typechart.js?v0.9xy31"></script>
+	<script src="https://play.pokemonshowdown.com/data/aliases.js?v0.9xy31"></script>
+	<script src="https://may8th1995.github.io/RBDex/battle-dex-search.js"></script>
+	<script src="https://may8th1995.github.io/RBDex/search.js"></script>
+	<script src="https://may8th1995.github.io/RBDex/js/pokedex.js?b359"></script>
+	<script src="https://may8th1995.github.io/RBDex/js/pokedex-pokemon.js?b359"></script>
+	<script src="https://may8th1995.github.io/RBDex/js/pokedex-moves.js?b359"></script>
+	<script src="https://may8th1995.github.io/RBDex/js/pokedex-search.js?b359"></script>
+	<script src="https://may8th1995.github.io/RBDex/js/router.js?b359"></script>
+
+</body></html>

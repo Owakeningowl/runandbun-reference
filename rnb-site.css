@@ -90,8 +90,6 @@ html[data-theme="night"]{
 #rnb-bar nav a{ display:inline-block !important; }
 
 /* ---------------------------------------------- AI doc (index.html) */
-html body{ background:var(--bg); color:var(--ink); }
-#layout{ }
 /* the doc's own sticky chrome has to sit under the shared bar */
 #sidebar{ top:var(--rnb-bar-h,44px) !important; height:calc(100vh - var(--rnb-bar-h,44px)) !important; }
 #topbar{ top:var(--rnb-bar-h,44px) !important; }
@@ -120,5 +118,5 @@ html body{ background:var(--bg); color:var(--ink); }
 /* ---------------------------------------------- trainer sheet (trainers.html)
    trainers.html is now its own page built on these tokens — no overrides needed. */
 
-/* ---------------------------------------------- dex + calc (remote mirrors) */
-body.rnb-mirror{ background:var(--bg) !important; }
+/* ---------------------------------------------- dex + calc (live mirrors)
+   These keep the original sites' own theming; we only add the bar on top. */
