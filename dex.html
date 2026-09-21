@@ -1,6 +1,22 @@
 <!DOCTYPE html>
 <html><head>
 <base href="https://may8th1995.github.io/RBDex/">
+<script id="rnb-history-shim">
+/* <base> makes history.pushState/replaceState resolve their URL against the
+   upstream origin, which throws SecurityError and kills the app's init.
+   Keep the call, drop the cross-origin URL. */
+(function(){
+  function wrap(fn){
+    return function(state, title, url){
+      try { return fn.call(history, state, title, url); }
+      catch(e){ try { return fn.call(history, state, title); } catch(_){} }
+    };
+  }
+  history.replaceState = wrap(History.prototype.replaceState);
+  history.pushState    = wrap(History.prototype.pushState);
+})();
+</script>
+
 
 
 	<meta charset="utf-8" />
@@ -96,24 +112,57 @@ tr:nth-child(even) td{ background:var(--a-panel) !important; }
 img[src*="types"], img[src*="categories"]{ filter:none !important; }
 
 </style>
-<link rel="stylesheet" href="https://owakeningowl.github.io/runandbun-reference/rnb-site.css">
-<script src="https://owakeningowl.github.io/runandbun-reference/rnb-site.js" defer></script>
+<style id="rnb-tweaks">
+#rnb-content .pfx-topbar .nav:not(.nav-theme){ display:none !important; }
+.pfx-topbar .header{ min-height:0 !important; }
+</style>
+
+<style id="rnb-chrome">
+#rnb-bar{
+  position:sticky; top:0; z-index:99999; display:flex; align-items:center; gap:12px;
+  flex-wrap:wrap; padding:8px 14px; background:#1c2028; border-bottom:1px solid #2a3040;
+  font:13px/1.3 "IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif; color:#a6aeba;
+}
+#rnb-bar .rnb-brand{ font-weight:700; font-size:13px; letter-spacing:.08em; text-transform:uppercase;
+  color:#ef7f72; text-decoration:none; white-space:nowrap; }
+#rnb-bar nav{ display:flex; gap:3px; flex-wrap:wrap; }
+#rnb-bar nav a{ padding:5px 10px; border-radius:6px; color:#a6aeba; text-decoration:none;
+  border:1px solid transparent; white-space:nowrap; }
+#rnb-bar nav a:hover{ background:#20242e; color:#eef1f6; }
+#rnb-bar nav a.on{ color:#ef7f72; background:rgba(239,127,114,.13); border-color:#ef7f72; font-weight:600; }
+#rnb-bar .rnb-tools{ display:flex; gap:5px; margin-left:auto; align-items:center; }
+#rnb-bar .rnb-tools button{
+  padding:5px 9px; font:500 11px/1 "IBM Plex Mono",ui-monospace,Menlo,monospace;
+  border:1px solid #2a3040; background:#15181f; color:#a6aeba; border-radius:6px; cursor:pointer;
+}
+#rnb-bar .rnb-tools button:hover{ color:#eef1f6; border-color:#4a5468; }
+#rnb-bar .rnb-tools .zoomgrp{ display:flex; gap:0; }
+#rnb-bar .rnb-tools .zoomgrp button{ border-radius:0; }
+#rnb-bar .rnb-tools .zoomgrp button:first-child{ border-radius:6px 0 0 6px; }
+#rnb-bar .rnb-tools .zoomgrp button:last-child{ border-radius:0 6px 6px 0; }
+#rnb-bar .rnb-tools .zoomgrp button+button{ border-left:0; }
+#rnb-content{ transform-origin:0 0; }
+</style>
 
 </head><body>
 <div id="rnb-bar">
-  <a class="rnb-brand" href="https://owakeningowl.github.io/runandbun-reference/index.html">RUN AND BUN</a>
+  <a class="rnb-brand" href="index.html">Run and Bun</a>
   <nav>
-    <a href="https://owakeningowl.github.io/runandbun-reference/index.html">AI Reference</a>
-    <a href="https://owakeningowl.github.io/runandbun-reference/trainers.html">Trainers</a>
-    <a href="https://owakeningowl.github.io/runandbun-reference/dex.html" class="rnb-current">Dex</a>
-    <a href="https://owakeningowl.github.io/runandbun-reference/calc.html">Calc</a>
+    <a href="index.html">AI Reference</a>
+    <a href="trainers.html">Trainers</a>
+    <a href="dex.html" class="on">Dex</a>
+    <a href="calc.html">Calc</a>
   </nav>
-  <div class="rnb-themes">
-    <button type="button" data-t="light">LIGHT</button>
-    <button type="button" data-t="dark">DARK</button>
-    <button type="button" data-t="night">NIGHT</button>
+  <div class="rnb-tools">
+    <button type="button" id="rnb-screen">Screen: Normal</button>
+    <span class="zoomgrp">
+      <button type="button" id="rnb-zoom-out" title="Zoom out">&minus;</button>
+      <button type="button" id="rnb-zoom" title="Cycle zoom">Zoom: 100%</button>
+      <button type="button" id="rnb-zoom-in" title="Zoom in">+</button>
+    </span>
   </div>
 </div>
+<div id="rnb-content">
 
 	<div class="pfx-topbar">
 		<div class="header">
@@ -160,4 +209,42 @@ img[src*="types"], img[src*="categories"]{ filter:none !important; }
 	<script src="https://may8th1995.github.io/RBDex/js/pokedex-search.js?b359"></script>
 	<script src="https://may8th1995.github.io/RBDex/js/router.js?b359"></script>
 
+</div>
+
+<script id="rnb-chrome-js">
+(function(){
+  var KEY='dex';
+  var FILTERS=[{n:'Normal',v:''},{n:'Dim',v:'brightness(.82) contrast(1.04)'}];
+  var ZOOMS=[75,90,100,110,125,150], ZOOM_DEFAULT=2;
+  var content=document.getElementById('rnb-content');
+  var sBtn=document.getElementById('rnb-screen'),
+      zBtn=document.getElementById('rnb-zoom'),
+      zIn=document.getElementById('rnb-zoom-in'),
+      zOut=document.getElementById('rnb-zoom-out');
+  function get(k,d){ try{ var v=localStorage.getItem(k); return v===null?d:+v; }catch(e){ return d; } }
+  function set(k,v){ try{ localStorage.setItem(k,String(v)); }catch(e){} }
+
+  function paintFilter(){
+    var i=get('rnb-filter-'+KEY,0); if(!FILTERS[i]) i=0;
+    if(content) content.style.filter=FILTERS[i].v;
+    sBtn.textContent='Screen: '+FILTERS[i].n;
+  }
+  function paintZoom(){
+    var i=get('rnb-zoom-'+KEY,ZOOM_DEFAULT); if(!ZOOMS[i]) i=ZOOM_DEFAULT;
+    if(content) content.style.zoom=ZOOMS[i]+'%';
+    zBtn.textContent='Zoom: '+ZOOMS[i]+'%';
+  }
+  function stepZoom(d){
+    var i=get('rnb-zoom-'+KEY,ZOOM_DEFAULT)+d;
+    i=Math.max(0,Math.min(ZOOMS.length-1,i)); set('rnb-zoom-'+KEY,i); paintZoom();
+  }
+  sBtn.addEventListener('click',function(){
+    set('rnb-filter-'+KEY,(get('rnb-filter-'+KEY,0)+1)%FILTERS.length); paintFilter(); });
+  zBtn.addEventListener('click',function(){
+    set('rnb-zoom-'+KEY,(get('rnb-zoom-'+KEY,ZOOM_DEFAULT)+1)%ZOOMS.length); paintZoom(); });
+  zIn.addEventListener('click',function(){ stepZoom(1); });
+  zOut.addEventListener('click',function(){ stepZoom(-1); });
+  paintFilter(); paintZoom();
+})();
+</script>
 </body></html>
